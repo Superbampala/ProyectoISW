@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getPendingObjects } from './src/controllers/object.controller.js';
+import objetoRoutes from './src/routes/objeto.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,6 +21,8 @@ app.use(morgan('dev'));
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Backend funcionando' });
 });
+
+app.use('/api/objects', objetoRoutes);
 
 app.get('/api/objects/pending', getPendingObjects);
 
