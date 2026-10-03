@@ -1,18 +1,193 @@
-// estructura inicial de prueba
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // cambiar si se usa otro motor
   url      = env("DATABASE_URL")
 }
 
+// ---------------------------------------------------------------------------
+// Enums (listas fijas del documento de requisitos como enum para integridad de datos)
+// ---------------------------------------------------------------------------
+
+enum Rol {
+  USUARIO_UBB
+  ADMIN_PUNTO
+  ADMIN_SISTEMA
+}
+
+enum Categoria {
+  DOCUMENTOS_Y_TARJETAS
+  ELECTRONICA
+  ROPA_Y_ACCESORIOS
+  LLAVES
+  UTILES_Y_MATERIAL_ESTUDIO
+  OTROS
+}
+
+enum EstadoObjeto {
+  PENDIENTE
+  APROBADO
+  ENTREGADO
+}
+
+// ---------------------------------------------------------------------------
+// USUARIO
+// ---------------------------------------------------------------------------
+
 model Usuario {
-  id        Int      @id @default(autoincrement())
+  id           Int    @id @default(autoincrement())
+  nombre       String
+  rut          String @unique
+  correo       String @unique
+  passwordHash String @map("password_hash")
+  rol          Rol
+
+  // Registra: un usuario halla/registra 0..N objetos; cada objeto tiene 1 hallador
+  objetosRegistrados Objeto[] @relation("Hallador")
+
+  // AdministradorQueEntrega: un usuario(admin) procesa 0..N retiros; cada retiro tiene 1 admin
+  retirosProcesados Retiro[] @relation("AdminEntrega")
+
+  // EsRetiradoPor: match opcional con la cuenta de quien retiró (por RUT)
+  retirosPropios Retiro[] @relation("UsuarioRetirador")
+
+  // Asigna (N:M con PuntoEntrega)
+  asignaciones AdminPuntoAsignacion[]
+
+  // Tiene: eventos de bitácora generados por este usuario
+  eventosBitacora Bitacora[]
+
+  @@map("usuarios")
+}
+
+// ---------------------------------------------------------------------------
+// OBJETO — entidad central
+// ---------------------------------------------------------------------------
+
+model Objeto {
+  id            Int          @id @default(autoincrement())
+  categoria     Categoria
+  descripcion   String
+  lugarHallazgo String       @map("lugar_hallazgo")
+  estado        EstadoObjeto @default(PENDIENTE)
+  fechaRegistro DateTime     @default(now()) @map("fecha_registro")
+  titularRut    String?      @map("titular_rut")     // solo si categoria = DOCUMENTOS_Y_TARJETAS
+  titularNombre String?      @map("titular_nombre")
+
+  puntoId           Int
+  usuarioHalladorId Int
+
+  // Reside: cada objeto reside en exactamente 1 punto de entrega
+  punto PuntoEntrega @relation(fields: [puntoId], references: [id])
+
+  // Registra: cada objeto tiene exactamente 1 usuario que lo halló
+  usuarioHallador Usuario @relation("Hallador", fields: [usuarioHalladorId], references: [id])
+
+  // Retirado: 0 o 1 retiro por objeto
+  retiro Retiro?
+
+  // Tiene: 0..N fotos
+  fotos Foto[]
+
+  // Tiene: 1..N eventos de bitácora
+  bitacora Bitacora[]
+
+  @@index([estado])
+  @@index([categoria])
+  @@index([puntoId])
+  @@map("objetos")
+}
+
+// ---------------------------------------------------------------------------
+// RETIRO
+// ---------------------------------------------------------------------------
+
+model Retiro {
+  id          Int      @id @default(autoincrement())
+  fechaRetiro DateTime @map("fecha_retiro")
+  rutRetiro   String   @map("rut_retiro") // capturado siempre, coincida o no con una cuenta
+
+  objetoId           Int  @unique // Retirado: 1:1 con Objeto
+  adminEntregaId     Int           // AdministradorQueEntrega: obligatorio
+  usuarioRetiradorId Int?          // EsRetiradoPor: opcional
+
+  objeto           Objeto   @relation(fields: [objetoId], references: [id])
+  adminEntrega     Usuario  @relation("AdminEntrega", fields: [adminEntregaId], references: [id])
+  usuarioRetirador Usuario? @relation("UsuarioRetirador", fields: [usuarioRetiradorId], references: [id])
+
+  @@map("retiros")
+}
+
+// ---------------------------------------------------------------------------
+// PUNTO_ENTREGA
+// ---------------------------------------------------------------------------
+
+model PuntoEntrega {
+  id        Int    @id @default(autoincrement())
   nombre    String
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  ubicacion String
+
+  objetos      Objeto[]
+  asignaciones AdminPuntoAsignacion[]
+
+  @@map("puntos_entrega")
+}
+
+// ---------------------------------------------------------------------------
+// ADMIN_PUNTO_ASIGNACION — resuelve el N:M "Asigna" (Usuario admin <-> Punto)
+// Sin atributos propios en el MER -> clave primaria compuesta, sin id extra
+// ---------------------------------------------------------------------------
+
+model AdminPuntoAsignacion {
+  usuarioId Int
+  puntoId   Int
+
+  usuario Usuario      @relation(fields: [usuarioId], references: [id])
+  punto   PuntoEntrega @relation(fields: [puntoId], references: [id])
+
+  @@id([usuarioId, puntoId])
+  @@map("admin_punto_asignacion")
+}
+
+// ---------------------------------------------------------------------------
+// FOTO
+// ---------------------------------------------------------------------------
+
+model Foto {
+  id          Int      @id @default(autoincrement())
+  urlArchivo  String   @map("url_archivo")
+  fechaSubida DateTime @default(now()) @map("fecha_subida")
+  objetoId    Int
+
+  objeto Objeto @relation(fields: [objetoId], references: [id])
+
+  @@map("fotos")
+}
+
+// ---------------------------------------------------------------------------
+// BITACORA — trazabilidad de solo lectura
+// ---------------------------------------------------------------------------
+
+enum TipoOperacion {
+  PRE_INSCRIPCION
+  APROBACION
+  RETIRO
+  ELIMINACION_MANUAL
+  ELIMINACION_AUTOMATICA
+}
+
+model Bitacora {
+  id            Int      @id @default(autoincrement())
+  tipoOperacion TipoOperacion @map("tipo_operacion")
+  fechaHora     DateTime @default(now()) @map("fecha_hora")
+
+  usuarioId Int
+  objetoId  Int
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  objeto  Objeto  @relation(fields: [objetoId], references: [id])
+
+  @@map("bitacora")
 }
