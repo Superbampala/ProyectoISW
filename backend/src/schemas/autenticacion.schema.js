@@ -31,3 +31,22 @@ export const registroSchema = z.object({
       .min(8, 'La contraseña debe tener al menos 8 caracteres')
   })
 });
+
+export const verificarCorreoSchema = z.object({
+  query: z.object({
+    token: z
+      .string({ required_error: 'El token de verificación es obligatorio' })
+      .trim()
+      .min(1, 'El token no puede estar vacío')
+  })
+});
+
+// Validación para el reenvío de correo (POST /api/auth/reenviar-verificacion)
+export const reenviarVerificacionSchema = z.object({
+  body: z.object({
+    correo: z
+      .string({ required_error: 'El correo es obligatorio' })
+      .trim()
+      .email('Debe ser un correo electrónico válido')
+  })
+});
