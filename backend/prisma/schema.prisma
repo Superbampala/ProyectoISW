@@ -183,15 +183,9 @@ enum TipoOperacion {
 }
 
 model Bitacora {
-<<<<<<< HEAD
-  id            Int      @id @default(autoincrement())
-  tipoOperacion TipoOperacion @map("tipo_operacion")
-  fechaHora     DateTime @default(now()) @map("fecha_hora")
-=======
   id            Int           @id @default(autoincrement())
   tipoOperacion TipoOperacion @map("tipo_operacion")
   fechaHora     DateTime      @default(now()) @map("fecha_hora")
->>>>>>> MassinilloBranch
 
   usuarioId Int
   objetoId  Int
