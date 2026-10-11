@@ -59,6 +59,9 @@ model Usuario {
   // Tiene: eventos de bitácora generados por este usuario
   eventosBitacora Bitacora[]
 
+  // Configuraciones de hora actualizadas por este usuario (administrador de sistema)
+  configuracionesHoraActualizadas ConfiguracionHora[] @relation("AdministradorSistema")
+
   @@map("usuarios")
 }
 
@@ -73,7 +76,8 @@ model Objeto {
   lugarHallazgo String       @map("lugar_hallazgo")
   estado        EstadoObjeto @default(PENDIENTE)
   fechaRegistro DateTime     @default(now()) @map("fecha_registro")
-  titularRut    String?      @map("titular_rut")     // solo si categoria = DOCUMENTOS_Y_TARJETAS
+  horaLimite    DateTime     @map("hora_limite")
+  titularRut    String?      @map("titular_rut") // solo si categoria = DOCUMENTOS_Y_TARJETAS
   titularNombre String?      @map("titular_nombre")
 
   puntoId           Int
@@ -110,8 +114,8 @@ model Retiro {
   rutRetiro   String   @map("rut_retiro") // capturado siempre, coincida o no con una cuenta
 
   objetoId           Int  @unique // Retirado: 1:1 con Objeto
-  adminEntregaId     Int           // AdministradorQueEntrega: obligatorio
-  usuarioRetiradorId Int?          // EsRetiradoPor: opcional
+  adminEntregaId     Int // AdministradorQueEntrega: obligatorio
+  usuarioRetiradorId Int? // EsRetiradoPor: opcional
 
   objeto           Objeto   @relation(fields: [objetoId], references: [id])
   adminEntrega     Usuario  @relation("AdminEntrega", fields: [adminEntregaId], references: [id])
@@ -170,10 +174,18 @@ model Foto {
 // BITACORA — trazabilidad de solo lectura
 // ---------------------------------------------------------------------------
 
+enum TipoOperacion {
+  PRE_INSCRIPCION
+  APROBACION
+  RETIRO
+  ELIMINACION_MANUAL
+  ELIMINACION_AUTOMATICA
+}
+
 model Bitacora {
-  id            Int      @id @default(autoincrement())
-  tipoOperacion String   @map("tipo_operacion")
-  fechaHora     DateTime @default(now()) @map("fecha_hora")
+  id            Int           @id @default(autoincrement())
+  tipoOperacion TipoOperacion @map("tipo_operacion")
+  fechaHora     DateTime      @default(now()) @map("fecha_hora")
 
   usuarioId Int
   objetoId  Int
@@ -182,4 +194,13 @@ model Bitacora {
   objeto  Objeto  @relation(fields: [objetoId], references: [id])
 
   @@map("bitacora")
+}
+
+model ConfiguracionHora {
+  id               Int      @id @default(autoincrement())
+  horasLimite      Int      @map("hora_limite")
+  fechaCambio      DateTime @default(now()) @map("fecha_cambio")
+  actualizadoPorId Int      @map("actualizado_por_id")
+
+  actualizadoPor Usuario @relation("AdministradorSistema", fields: [actualizadoPorId], references: [id])
 }
