@@ -29,3 +29,16 @@ export const getPendingObjects = () => {
         },
     });
 };
+
+export const getObjectById = (id) => {
+    return prisma.objeto.findUnique({
+        where: { id }
+    });
+};
+
+export const updateObject = (id, data) => {
+    return prisma.objeto.update({
+        where: { id },
+        data,
+    });
+}
