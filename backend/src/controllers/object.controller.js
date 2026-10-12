@@ -12,6 +12,12 @@ export const getPendingObjects = async (req, res) => {
 
 export const editObject = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Se requiere autenticación para editar un objeto",
+      });
+    }
+
     const pre = await objectService.getObjectById(req.params.id);
     if (!pre)
       return res.status(404).json({ error: "Pre-inscripción no encontrada" });
@@ -19,7 +25,7 @@ export const editObject = async (req, res) => {
     const isPointAdmin = req.user.rol === "ADMIN_PUNTO";
     const isSystemAdmin = req.user.rol === "ADMIN_SISTEMA";
     const isAuthor = req.user.id === pre.usuarioHalladorId;
-    const isApproved = pre.estado === "APROBADA";
+    const isApproved = pre.estado === "APROBADO";
 
     const canEdit = isSystemAdmin || isPointAdmin || (isAuthor && !isApproved);
 
@@ -35,7 +41,6 @@ export const editObject = async (req, res) => {
       "categoria",
       "titularRut",
       "titularNombre",
-      "fotos",
       "descripcion",
       "lugarHallazgo",
       "puntoId",
@@ -53,7 +58,7 @@ export const editObject = async (req, res) => {
     }
 
     const finalCategory = data.categoria ?? pre.categoria;
-    const isDocument = finalCategory.toLowerCase() === "documentos";
+    const isDocument = finalCategory === "DOCUMENTOS_Y_TARJETAS";
 
     if (!isDocument) {
       if (data.categoria !== undefined) {
