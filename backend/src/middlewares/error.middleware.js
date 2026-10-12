@@ -9,6 +9,7 @@ export const errorHandler = (err, req, res, next) => {
 
   // Errores de Prisma (códigos de error conocidos)
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    
     // P2002: Violación de restricción de unicidad (Unique constraint failed)
     if (err.code === 'P2002') {
       const target = err.meta?.target ? err.meta.target.join(', ') : 'campo único';
