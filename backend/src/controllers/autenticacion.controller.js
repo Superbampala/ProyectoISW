@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { prisma } from '../config/db.js'; // Tu instancia de Prisma Client
+import { enviarCorreoVerificacion } from '../utils/mailer.js'; // Ajusta la ruta según la ubicación de tu archivo mailer
 
 export const registrarCuenta = async (req, res, next) => {
   try {
@@ -44,6 +45,8 @@ export const registrarCuenta = async (req, res, next) => {
     const enlaceVerificacion = `http://localhost:3000/api/auth/verificar?token=${tokenVerificacion}`;
     
     // Aquí llamar a servicio de mailing para enviar enlaceVerificacion
+    await enviarCorreoVerificacion(correo, enlaceVerificacion);
+
     console.log(`Enviar este enlace a ${correo}: ${enlaceVerificacion}`);
     
     // Respuesta según el requerimiento
@@ -143,8 +146,9 @@ export const reenviarCorreoVerificacion = async (req, res, next) => {
       }
     });
 
-    const enlaceVerificacion = `http://localhost:3000/api/auth/verificar?token=${nuevoToken}`;
-    console.log(`[EMAIL SIMULATION] Reenviando enlace a ${correo}: ${enlaceVerificacion}`);
+    // Construir nuevo enlace
+    const enlaceVerificacion = `http://localhost:3000/api/autenticacion/verificar?token=${nuevoToken}`;
+    await enviarCorreoVerificacion(correo, enlaceVerificacion);
 
     return res.status(200).json({
       status: 'success',
