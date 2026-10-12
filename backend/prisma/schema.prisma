@@ -183,9 +183,9 @@ enum TipoOperacion {
 }
 
 model Bitacora {
-  id            Int           @id @default(autoincrement())
+  id            Int                @id @default(autoincrement())
   tipoOperacion TipoOperacion @map("tipo_operacion")
-  fechaHora     DateTime      @default(now()) @map("fecha_hora")
+  fechaHora     DateTime           @default(now()) @map("fecha_hora")
 
   usuarioId Int
   objetoId  Int
@@ -194,6 +194,15 @@ model Bitacora {
   objeto  Objeto  @relation(fields: [objetoId], references: [id])
 
   @@map("bitacora")
+}
+
+model ConfiguracionHora {
+  id               Int      @id @default(autoincrement())
+  horasLimite      Int      @map("hora_limite")
+  fechaCambio      DateTime @default(now()) @map("fecha_cambio")
+  actualizadoPorId Int      @map("actualizado_por_id")
+
+  actualizadoPor Usuario @relation("AdministradorSistema", fields: [actualizadoPorId], references: [id])
 }
 
 model ConfiguracionHora {
