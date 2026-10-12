@@ -4,7 +4,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getPendingObjects } from './src/controllers/object.controller.js';
+import { obtenerObjetosPendientes } from './src/controllers/objeto.controller.js';
 import objetoRoutes from './src/routes/objeto.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,7 +24,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/objects', objetoRoutes);
 
-app.get('/api/objects/pending', getPendingObjects);
+app.get('/api/objects/pending', obtenerObjetosPendientes);
 
 app.use(express.static(frontendPath));
 

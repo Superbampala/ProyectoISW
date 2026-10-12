@@ -17,6 +17,7 @@ async function main() {
   await tx.retiro.deleteMany();
   await tx.objeto.deleteMany();
   await tx.adminPuntoAsignacion.deleteMany();
+  await tx.configuracionHora.deleteMany();
   await tx.puntoEntrega.deleteMany();
   await tx.usuario.deleteMany();
 
@@ -90,6 +91,18 @@ async function main() {
       ],
     });
 
+    const configHora = await tx.configuracionHora.create({
+      data: {
+        horasLimite: 2,
+        fechaCambio: new Date(),
+        actualizadoPorId: adminSistema.id,
+      },
+    });
+
+    const fechaHoraLimite = new Date(
+      Date.now() + configHora.horasLimite * 60 * 60 * 1000
+    );
+
     const objects = await Promise.all([
       tx.objeto.create({
         data: {
@@ -101,6 +114,7 @@ async function main() {
           titularNombre: 'Valentina González',
           puntoId: biblioteca.id,
           usuarioHalladorId: camila.id,
+          horaLimite: fechaHoraLimite,
           fotos: {
             create: [
               { urlArchivo: image('photo-1554224155-6726b3ff858f') },
@@ -120,6 +134,7 @@ async function main() {
           estado: 'APROBADO',
           puntoId: edificioA.id,
           usuarioHalladorId: diego.id,
+          horaLimite: fechaHoraLimite,
           fotos: {
             create: [{ urlArchivo: image('photo-1496181133206-80ce9b88a853') }],
           },
@@ -139,6 +154,7 @@ async function main() {
           estado: 'ENTREGADO',
           puntoId: casino.id,
           usuarioHalladorId: camila.id,
+          horaLimite: fechaHoraLimite,
           fotos: {
             create: [{ urlArchivo: image('photo-1553062407-98eeb64c6a62') }],
           },
@@ -159,6 +175,7 @@ async function main() {
           estado: 'APROBADO',
           puntoId: biblioteca.id,
           usuarioHalladorId: diego.id,
+          horaLimite: fechaHoraLimite,
           fotos: {
             create: [{ urlArchivo: image('photo-1582139329536-e7284fece509') }],
           },
@@ -178,6 +195,7 @@ async function main() {
           estado: 'PENDIENTE',
           puntoId: edificioA.id,
           usuarioHalladorId: camila.id,
+          horaLimite: fechaHoraLimite,
           bitacora: {
             create: { tipoOperacion: 'PRE_INSCRIPCION', usuarioId: camila.id },
           },
@@ -191,6 +209,7 @@ async function main() {
           estado: 'ENTREGADO',
           puntoId: casino.id,
           usuarioHalladorId: diego.id,
+          horaLimite: fechaHoraLimite,
           fotos: {
             create: [{ urlArchivo: image('photo-1602143407151-7111542de6e8') }],
           },

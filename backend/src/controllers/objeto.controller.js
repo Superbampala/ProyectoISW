@@ -1,8 +1,8 @@
-import * as objectService from '../services/object.services.js';
+import * as objetoService from '../services/objeto.services.js';
 
-export const getPendingObjects = async (req, res) => {
+export const obtenerObjetosPendientes = async (req, res) => {
     try {
-        const pendingObjects = await objectService.getPendingObjects();
+        const pendingObjects = await objetoService.obtenerObjetosPendientes();
         res.status(200).json(pendingObjects);
     } catch (error) {
         console.error('Error al obtener los objetos pendientes:', error);
@@ -12,8 +12,7 @@ export const getPendingObjects = async (req, res) => {
 
 export const crearObjeto = async (req, res) => {
     try {
-        const objetoData = req.body;
-        const nuevoObjeto = await objectService.crearObjeto(objetoData);
+        const nuevoObjeto = await objetoService.crearObjeto(req.body);
         res.status(201).json(nuevoObjeto);
     } catch (error) {
         console.error('Error al crear el objeto:', error);
@@ -23,7 +22,7 @@ export const crearObjeto = async (req, res) => {
 
 export const listarPuntosEntrega = async (req, res) => {
     try {
-        const puntosEntrega = await objectService.listarPuntosEntrega();
+        const puntosEntrega = await objetoService.listarPuntosEntrega();
         res.status(200).json(puntosEntrega);
     } catch (error) {
         console.error('Error al listar los puntos de entrega:', error);
