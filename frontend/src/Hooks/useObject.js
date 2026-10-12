@@ -37,6 +37,7 @@ export function usePendingObjects() {
     // si fetchPendingObjects cambia, se vuelve a ejecutar el efecto
   }, [fetchPendingObjects]);
 
+  //refresh permite ver los cambios actualizados desde la bd
   const refetch = useCallback(
     () => fetchPendingObjects(),
     // si fetchPendingObjects cambia, se vuelve a crear la función refetch
@@ -44,4 +45,47 @@ export function usePendingObjects() {
   );
 
   return { objects, loading, error, refetch };
+}
+
+export function useEditObject() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const editObject = useCallback(async (id, updatedData) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/objetos/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "2",
+          "x-user-role": "ADMIN_PUNTO",
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || `No se pudo actualizar el objeto (${response.status})`,
+        );
+      }
+
+      return data;
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    editObject,
+    loading,
+    error,
+  };
 }
