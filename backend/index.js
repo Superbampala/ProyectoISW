@@ -4,7 +4,8 @@ import cors from 'cors';
 import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getPendingObjects } from './src/controllers/object.controller.js';
+import { editObject, getPendingObjects } from './src/controllers/object.controller.js';
+import { devAuthMiddleware } from './src/middlewares/dev-auth.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,7 +22,14 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'Backend funcionando' });
 });
 
+app.patch(
+  '/api/objetos/:id',
+  devAuthMiddleware,
+  editObject
+);
+
 app.get('/api/objects/pending', getPendingObjects);
+
 
 app.use(express.static(frontendPath));
 
