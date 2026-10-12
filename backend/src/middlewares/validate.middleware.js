@@ -1,4 +1,3 @@
-import { ZodError } from 'zod';
 
 /**
  * Middleware genérico para la validación de peticiones HTTP utilizando esquemas de Zod.
