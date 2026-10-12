@@ -43,7 +43,7 @@ export const registrarCuenta = async (req, res, next) => {
     // Construir el enlace de verificación que se enviará al correo del usuario
     const enlaceVerificacion = `http://localhost:3000/api/auth/verificar?token=${tokenVerificacion}`;
     
-    // (Aquí llamarías a tu servicio de mailing para enviar enlaceVerificacion)
+    // Aquí llamar a servicio de mailing para enviar enlaceVerificacion
     console.log(`Enviar este enlace a ${correo}: ${enlaceVerificacion}`);
     
     // Respuesta según el requerimiento
