@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import "./objectDetailsModal.css";
 
 export default function ObjectDetailsModal({ objectId, onClose }) {
