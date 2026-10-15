@@ -1,12 +1,15 @@
 import { Router } from 'express';
 import {
-  crearObjeto,
-  listarPuntosEntrega,
-} from '../controllers/objeto.controller.js';
+  createObject,
+  getDeliveryPoints,
+} from '../controllers/object.controller.js';
+import { devAuthMiddleware } from '../middlewares/dev-auth.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { crearObjetoSchema } from '../schemas/object.schema.js';
 
 const router = Router();
 
-router.post('/', crearObjeto);
-router.get('/puntos-entrega', listarPuntosEntrega);
+router.post('/', devAuthMiddleware, validate(crearObjetoSchema), createObject);
+router.get('/puntos-entrega', getDeliveryPoints);
 
 export default router;

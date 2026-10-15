@@ -7,6 +7,7 @@
  */
 export const validate = (schema) => {
   return (req, res, next) => {
+    
     // Se agrupan 'body', 'query' y 'params' en un solo objeto para validarlos simultáneamente.
     // 'safeParse' ejecuta la validación de forma segura sin lanzar excepciones (no rompe el servidor).
     const result = schema.safeParse({
