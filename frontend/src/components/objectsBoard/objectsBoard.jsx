@@ -33,7 +33,7 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         {!loading && !error && objects.length > 0 && (
           <ul className="board__grid">
             {objects.map((obj) => (
-              <ObjectItem key={obj.id} obj={obj} />
+              <ObjectItem key={obj.id} obj={obj} onUpdated={refetch} />
             ))}
           </ul>
         )}
