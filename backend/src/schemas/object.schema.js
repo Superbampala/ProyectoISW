@@ -7,16 +7,16 @@ const rutRegex = /^(\d{1,2}\.?\d{3}\.?\d{3}-[\dkK])$/;
 const categoriasValidas = [
   'DOCUMENTOS_Y_TARJETAS',
   'ELECTRONICA',
-  'ROPA',
-  'ACCESORIOS',
+  'ROPA_Y_ACCESORIOS',
+  'LLAVES',
+  'UTILES_Y_MATERIAL_ESTUDIO',
   'OTROS'
 ];
 
 const estadosValidos = [
   'PENDIENTE',
-  'RETIRADO',
-  'DESECHADO',
-  'TRANSFERIDO'
+  'APROBADO',
+  'ENTREGADO'
 ];
 
 /**
@@ -43,8 +43,6 @@ export const crearObjetoSchema = z.object({
         .min(3, 'El lugar de hallazgo debe tener al menos 3 caracteres')
         .max(200, 'El lugar de hallazgo no puede exceder 200 caracteres'),
 
-      estado: z.enum(estadosValidos).default('PENDIENTE').optional(),
-
       titularRut: z
         .string()
         .trim()
@@ -65,10 +63,6 @@ export const crearObjetoSchema = z.object({
         .int()
         .positive('El ID del punto de entrega debe ser mayor a 0'),
 
-      usuarioHalladorId: z.coerce
-        .number({ required_error: 'El ID del usuario hallador es obligatorio' })
-        .int()
-        .positive('El ID del usuario hallador debe ser mayor a 0')
     })
     // Regla condicional: exige titularRut si la categoría es DOCUMENTOS_Y_TARJETAS
     .superRefine((data, ctx) => {
@@ -97,7 +91,6 @@ export const actualizarObjetoSchema = z.object({
       categoria: z.enum(categoriasValidas),
       descripcion: z.string().trim().min(3).max(500),
       lugarHallazgo: z.string().trim().min(3).max(200),
-      estado: z.enum(estadosValidos),
       titularRut: z.string().trim().regex(rutRegex, 'Formato de RUT inválido').nullable(),
       titularNombre: z.string().trim().min(2).max(100).nullable(),
       puntoId: z.coerce.number().int().positive()

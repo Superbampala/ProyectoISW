@@ -1,15 +1,16 @@
-import "dotenv/config";
-import express from "express";
-import cors from "cors";
-import morgan from "morgan";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import objetoRoutes from './src/routes/objeto.routes.js';
 import {
   editObject,
-  getObjectOptions,
+  getApprovedObjects,
   getPendingObjects,
-} from "./src/controllers/object.controller.js";
-import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
+} from './src/controllers/object.controller.js';
+import { devAuthMiddleware } from './src/middlewares/dev-auth.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,11 +23,20 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
-app.get("/api/health", (req, res) => {
-  res.json({ message: "Backend funcionando" });
+app.use('/api/objects', objetoRoutes);
+
+app.get('/api/health', (req, res) => {
+  res.json({ message: 'Backend funcionando' });
 });
 
-app.patch("/api/objetos/:id", devAuthMiddleware, editObject);
+app.patch(
+  '/api/objetos/:id',
+  devAuthMiddleware,
+  editObject
+);
+
+app.get('/api/objects', getApprovedObjects);
+app.get('/api/objects/pending', devAuthMiddleware, getPendingObjects);
 
 app.get("/api/objetos/opciones", getObjectOptions);
 app.get("/api/objects/pending", getPendingObjects);
