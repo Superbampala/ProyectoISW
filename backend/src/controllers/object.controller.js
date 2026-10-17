@@ -2,11 +2,27 @@ import * as objectService from "../services/object.services.js";
 
 export const getPendingObjects = async (req, res) => {
   try {
+    if (!["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol)) {
+      return res.status(403).json({
+        error: "Solo los administradores pueden revisar pre-inscripciones",
+      });
+    }
+
     const pendingObjects = await objectService.getPendingObjects();
     res.status(200).json(pendingObjects);
   } catch (error) {
     console.error("Error al obtener los objetos pendientes:", error);
     res.status(500).json({ error: "Error al obtener los objetos pendientes" });
+  }
+};
+
+export const getApprovedObjects = async (req, res) => {
+  try {
+    const approvedObjects = await objectService.getApprovedObjects();
+    res.status(200).json(approvedObjects);
+  } catch (error) {
+    console.error("Error al obtener los objetos aprobados:", error);
+    res.status(500).json({ error: "Error al obtener los objetos aprobados" });
   }
 };
 
@@ -16,7 +32,19 @@ export const createObject = async (req, res) => {
       ...req.body,
       usuarioHalladorId: req.user.id,
     });
-    res.status(201).json(newObject);
+
+    const deadline = new Date(newObject.horaLimite).toLocaleTimeString(
+      "es-CL",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+    );
+
+    res.status(201).json({
+      message: `Objeto pre-inscrito. Entrégalo en ${newObject.punto.nombre} antes de las ${deadline}`,
+      preInscripcion: newObject,
+    });
   } catch (error) {
     console.error("Error al crear el objeto:", error);
     res.status(500).json({ error: "Error al crear el objeto" });

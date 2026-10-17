@@ -5,7 +5,11 @@ import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import objetoRoutes from './src/routes/objeto.routes.js';
-import { editObject, getPendingObjects } from './src/controllers/object.controller.js';
+import {
+  editObject,
+  getApprovedObjects,
+  getPendingObjects,
+} from './src/controllers/object.controller.js';
 import { devAuthMiddleware } from './src/middlewares/dev-auth.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +23,7 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-app.use('/api/objetos', objetoRoutes);
+app.use('/api/objects', objetoRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Backend funcionando' });
@@ -31,7 +35,8 @@ app.patch(
   editObject
 );
 
-app.get('/api/objects/pending', getPendingObjects);
+app.get('/api/objects', getApprovedObjects);
+app.get('/api/objects/pending', devAuthMiddleware, getPendingObjects);
 
 
 app.use(express.static(frontendPath));

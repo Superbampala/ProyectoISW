@@ -58,12 +58,45 @@ export const createObject = async (objectData) => {
     data.titularNombre = titularNombre;
   }
 
-  return prisma.objeto.create({ data });
+  return prisma.objeto.create({
+    data,
+    include: {
+      punto: {
+        select: {
+          id: true,
+          nombre: true,
+          ubicacion: true,
+        },
+      },
+    },
+  });
 };
 
 export const getPendingObjects = () => {
   return prisma.objeto.findMany({
     where: { estado: "PENDIENTE" },
+    select: {
+      id: true,
+      categoria: true,
+      descripcion: true,
+      lugarHallazgo: true,
+      fechaRegistro: true,
+      titularRut: true,
+      titularNombre: true,
+      bitacora: {
+        select: { fechaHora: true },
+        orderBy: { fechaHora: "asc" },
+      },
+      fotos: {
+        select: { urlArchivo: true },
+      },
+    },
+  });
+};
+
+export const getApprovedObjects = () => {
+  return prisma.objeto.findMany({
+    where: { estado: "APROBADO" },
     select: {
       id: true,
       categoria: true,

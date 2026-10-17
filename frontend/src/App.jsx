@@ -1,20 +1,24 @@
-import { useState } from 'react'
-import './App.css'
-import { API_URL } from './api/config';
+import { useState } from "react";
+import "./App.css";
 import ObjectsBoard from './components/objectsBoard/objectsBoard';
-
-fetch(`${API_URL}/health`)
-  .then((response) => response.json())
-  .then((data) => console.log(data));
+import ObjectForm from "./components/objectForm/objectForm";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [screen, setScreen] = useState("objects");
 
   return (
-    <>
-      <ObjectsBoard />
-    </>
-  )
+    <div>
+      <nav className="app__nav" aria-label="Navegación principal">
+        <button onClick={() => setScreen("objects")}>Objetos aprobados</button>
+        <button onClick={() => setScreen("form")}>Encontré un objeto</button>
+      </nav>
+      {screen === "form" ? (
+        <ObjectForm onBack={() => setScreen("objects")} />
+      ) : (
+        <ObjectsBoard />
+      )}
+    </div>
+  );
 }
 
 export default App
