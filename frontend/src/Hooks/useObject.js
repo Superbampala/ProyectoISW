@@ -125,3 +125,46 @@ export function useObjectOptions() {
 
   return { options, loading, error };
 }
+
+export function useApproveObject() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const approveObject = useCallback(async (id) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/objetos/${id}/aprobar`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "2",
+          "x-user-role": "ADMIN_PUNTO",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || `No se pudo aprobar el objeto (${response.status})`,
+        );
+      }
+
+      return data;
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    }
+    finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    approveObject,
+    loading,
+    error,
+  };
+}

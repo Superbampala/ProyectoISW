@@ -93,3 +93,41 @@ export const editObject = async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
+
+export const approveObject = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Se requiere autenticación para aprobar un objeto",
+      });
+    }
+
+    const pre = await objectService.getObjectById(req.params.id);
+    if (!pre)
+      return res.status(404).json({ error: "Pre-inscripción no encontrada" });
+
+    const isPointAdmin = req.user.rol === "ADMIN_PUNTO";
+    const isSystemAdmin = req.user.rol === "ADMIN_SISTEMA";
+    const isApproved = pre.estado === "APROBADO";
+
+    const canApprove = (isSystemAdmin || isPointAdmin ) && !isApproved;
+
+    if (!canApprove) {
+      const error =
+        isApproved
+          ? "La pre-inscripción ya fue aprobada y no puede ser aprobada nuevamente"
+          : "No tienes permiso para realizar esta acción";
+      return res.status(403).json({ error });
+    }
+
+    const updated = await objectService.approveObject(req.params.id);
+
+    return res.status(200).json(updated);
+
+
+  }catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+    

@@ -8,6 +8,7 @@ import {
   editObject,
   getObjectOptions,
   getPendingObjects,
+  approveObject 
 } from "./src/controllers/object.controller.js";
 import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
 
@@ -27,6 +28,8 @@ app.get("/api/health", (req, res) => {
 });
 
 app.patch("/api/objetos/:id", devAuthMiddleware, editObject);
+
+app.patch("/api/objetos/:id/aprobar", devAuthMiddleware, approveObject);
 
 app.get("/api/objetos/opciones", getObjectOptions);
 app.get("/api/objects/pending", getPendingObjects);
