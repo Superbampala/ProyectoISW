@@ -9,8 +9,10 @@ import {
   editObject,
   getApprovedObjects,
   getPendingObjects,
-} from './src/controllers/object.controller.js';
-import { devAuthMiddleware } from './src/middlewares/dev-auth.middleware.js';
+  approveObject 
+} from "./src/controllers/object.controller.js";
+import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,6 +39,8 @@ app.patch(
 
 app.get('/api/objects', getApprovedObjects);
 app.get('/api/objects/pending', devAuthMiddleware, getPendingObjects);
+
+app.patch("/api/objetos/:id/aprobar", devAuthMiddleware, approveObject);
 
 app.get("/api/objetos/opciones", getObjectOptions);
 app.get("/api/objects/pending", getPendingObjects);

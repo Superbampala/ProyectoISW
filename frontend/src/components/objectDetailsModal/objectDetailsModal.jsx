@@ -1,6 +1,6 @@
 import "./objectDetailsModal.css";
 import { useState } from "react";
-import { useEditObject, useObjectOptions } from "../../Hooks/useObject";
+import { useEditObject, useObjectOptions, useApproveObject } from "../../Hooks/useObject";
 
 const allowedFields = [
   "categoria",
@@ -32,6 +32,15 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     useObjectOptions();
   const { editObject, loading: saving, error: saveError } = useEditObject();
   const [formError, setFormError] = useState(null);
+  const { approveObject } = useApproveObject();
+
+
+  //solo de prueba, se debe eliminar cuando se implemente la autenticación
+  const user = {
+    rol: "ADMIN_PUNTO",
+  };
+
+  const canApprove = user.rol === "ADMIN_PUNTO" || user.rol==="ADMIN_SISTEMA";
 
   function handleBackdropClick(event) {
     event.stopPropagation();
@@ -42,6 +51,16 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((currentForm) => ({ ...currentForm, [name]: value }));
+  }
+
+  async function handleApprove() {
+    try {
+      await approveObject(object.id);
+      onSaved?.();
+      onClose();
+    } catch (error) {
+      setFormError(error.message);
+    }
   }
 
   async function handleSubmit(event) {
@@ -57,9 +76,9 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     }
 
     try {
-      const updatedObject = await editObject(object.id, data);
+      await editObject(object.id, data);
       // actualiza el formulario
-      onSaved?.(updatedObject);
+      onSaved?.();
       onClose();
     } catch (error) {
       setFormError(error.message);
@@ -175,6 +194,14 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
             <button type="submit" disabled={optionsLoading || saving}>
               {saving ? "Guardando..." : "Guardar cambios"}
             </button>
+            {canApprove && (
+              <button type="button" 
+              onClick={handleApprove}
+              className="object-details-modal__approve-button"
+              disabled={saving}>
+                Aprobar
+              </button>
+            )}
           </div>
         </form>
       </div>
