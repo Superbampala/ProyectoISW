@@ -9,7 +9,8 @@ import {
   editObject,
   getApprovedObjects,
   getPendingObjects,
-  approveObject 
+  approveObject,
+  getObjectOptions
 } from "./src/controllers/object.controller.js";
 import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
 
