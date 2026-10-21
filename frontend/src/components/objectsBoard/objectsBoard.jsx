@@ -27,7 +27,7 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         )}
 
         {!loading && !error && objects.length === 0 && (
-          <p className="board__state">No hay objetos pendientes.</p>
+          <p className="board__state">No hay objetos aprobados.</p>
         )}
 
         {!loading && !error && objects.length > 0 && (

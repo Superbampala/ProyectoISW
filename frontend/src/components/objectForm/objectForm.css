@@ -1,0 +1,86 @@
+.object-form__content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.object-form__card {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 2px 6px rgba(0, 43, 83, 0.15);
+}
+
+.object-form__intro {
+  margin: 0 0 4px;
+  color: var(--text-soft);
+}
+
+.object-form__card label {
+  display: grid;
+  gap: 7px;
+  font-weight: 600;
+}
+
+.object-form__card input,
+.object-form__card select,
+.object-form__card textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+
+.object-form__card textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.object-form__card input:focus,
+.object-form__card select:focus,
+.object-form__card textarea:focus {
+  outline: 2px solid var(--navy);
+  outline-offset: 1px;
+}
+
+.object-form__submit {
+  margin-top: 4px;
+}
+
+.object-form__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.object-form__error,
+.object-form__confirmation {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.object-form__error {
+  background: #ffebee;
+  color: #a61b1b;
+}
+
+.object-form__confirmation {
+  background: #e5f4eb;
+  color: #176b39;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .object-form__content {
+    padding: 16px 12px 32px;
+  }
+
+  .object-form__card {
+    padding: 18px;
+  }
+}

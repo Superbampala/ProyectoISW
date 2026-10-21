@@ -7,6 +7,7 @@
  */
 export const validate = (schema) => {
   return (req, res, next) => {
+    
     // Se agrupan 'body', 'query' y 'params' en un solo objeto para validarlos simultáneamente.
     // 'safeParse' ejecuta la validación de forma segura sin lanzar excepciones (no rompe el servidor).
     const result = schema.safeParse({
@@ -18,7 +19,7 @@ export const validate = (schema) => {
     // Si los datos enviados no cumplen con la estructura o restricciones definidas en el esquema
     if (!result.success) {
       // Mapeamos el arreglo de errores que genera Zod para convertirlo en un formato legible para la API
-      const errors = result.error.errors.map((err) => ({
+      const errors = result.error.issues.map((err) => ({
         // err.path indica la ubicación del error
         // 'slice(1)' elimina el primer elemento ('body', 'query' o 'params') para que devuelva el nombre del campo
         // 'join('.')' conecta subcampos si existen objetos anidados

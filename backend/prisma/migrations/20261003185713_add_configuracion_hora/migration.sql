@@ -1,3 +1,9 @@
+/*
+  Warnings:
+
+  - Added the required column `hora_limite` to the `objetos` table without a default value. This is not possible if the table is not empty.
+
+*/
 -- AlterTable
 ALTER TABLE "objetos" ADD COLUMN     "hora_limite" TIMESTAMP(3) NOT NULL;
 

@@ -11,12 +11,10 @@ export function usePendingObjects() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/objects/pending`, { signal });
+      const response = await fetch(`${API_URL}/objects`, { signal });
 
       if (!response.ok) {
-        throw new Error(
-          `No se pudieron obtener los objetos (${response.status})`,
-        );
+        throw new Error(`No se pudieron obtener los objetos (${response.status})`);
       }
 
       const data = await response.json();
@@ -45,6 +43,77 @@ export function usePendingObjects() {
   );
 
   return { objects, loading, error, refetch };
+}
+
+export function useCreateObject() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
+
+  const createObject = useCallback(async (objectData) => {
+    setLoading(true);
+    setError(null);
+    setConfirmation(null);
+
+    try {
+      const response = await fetch(`${API_URL}/objects`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "1",
+          "x-user-role": "USUARIO_UBB",
+        },
+        body: JSON.stringify(objectData),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        const validationError = data.detalles?.[0]?.mensaje;
+        throw new Error(
+          validationError || data.error || `No se pudo registrar el objeto (${response.status})`,
+        );
+      }
+
+      setConfirmation(data.message);
+      return data;
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { createObject, loading, error, confirmation };
+}
+
+export function useDeliveryPoints() {
+  const [points, setPoints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch(`${API_URL}/objects/puntos-entrega`, { signal: controller.signal })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "No se pudieron cargar los puntos");
+        }
+        setPoints(data);
+      })
+      .catch((requestError) => {
+        if (requestError.name !== "AbortError") setError(requestError.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  return { points, loading, error };
 }
 
 export function useEditObject() {
