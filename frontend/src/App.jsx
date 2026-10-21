@@ -1,20 +1,16 @@
-import { useState } from 'react'
-import './App.css'
-import { API_URL } from './api/config';
-import ObjectsBoard from './components/objectsBoard/objectsBoard';
-
-fetch(`${API_URL}/health`)
-  .then((response) => response.json())
-  .then((data) => console.log(data));
+import { useState } from "react";
+import "./App.css";
+import MainMenu from "./components/mainMenu/mainMenu";
+import ObjectsBoard from "./components/objectsBoard/objectsBoard";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [showObjectsBoard, setShowObjectsBoard] = useState(false);
 
-  return (
-    <>
-      <ObjectsBoard />
-    </>
-  )
+  if (showObjectsBoard) {
+    return <ObjectsBoard onBack={() => setShowObjectsBoard(false)} />;
+  }
+
+  return <MainMenu onViewObjects={() => setShowObjectsBoard(true)} />;
 }
 
-export default App
+export default App;
