@@ -1,9 +1,9 @@
-import { usePendingObjects } from "../../Hooks/useObject";
-import "./ObjectsBoard.css";
-import ObjectItem from "../objectItem/objectItem";
+import { useGetApprovedObjects } from "../../Hooks/useObject";
+import "../pendingObjectsBoard/pendingObjectsBoard.css";
+import ObjectItem from "../approvedObjectItem/approvedObjectItem";
 
 export default function ObjectsBoard({ onBack = () => {} }) {
-  const { objects, loading, error, refetch } = usePendingObjects();
+  const { objects, loading, error, refetch } = useGetApprovedObjects();
 
   return (
     <div className="board">
@@ -27,7 +27,7 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         )}
 
         {!loading && !error && objects.length === 0 && (
-          <p className="board__state">No hay objetos aprobados.</p>
+          <p className="board__state">No hay objetos perdidos</p>
         )}
 
         {!loading && !error && objects.length > 0 && (

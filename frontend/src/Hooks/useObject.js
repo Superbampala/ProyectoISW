@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api/config";
 
-export function usePendingObjects() {
+export function useGetPendingObjects() {
   const [objects, setObjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -236,4 +236,47 @@ export function useApproveObject() {
     loading,
     error,
   };
+}
+
+export function useGetApprovedObjects() {
+  const [objects, setObjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchApprovedObjects = useCallback(async (signal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/objects`, { signal });
+      if (!response.ok) {
+        throw new Error(
+          `No se pudieron obtener los objetos aprobados (${response.status})`,
+        );
+      }
+      const data = await response.json();
+      setObjects(data);
+    }
+    catch (requestError) {
+      // Si la solicitud fue abortada, no se establece el error
+      if (requestError.name !== "AbortError") {
+        setError(requestError.message);
+      }
+    }
+    finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchApprovedObjects(controller.signal);
+    return () => controller.abort();
+  }, [fetchApprovedObjects]);
+
+  const refetch = useCallback(
+    () => fetchApprovedObjects(),
+    [fetchApprovedObjects],
+  );
+
+  return { objects, loading, error, refetch };
 }

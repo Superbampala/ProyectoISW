@@ -1,0 +1,108 @@
+:root {
+  --navy: #002b53;
+  --navy-dark: #001f3c;
+  --bg: #eef1f5;
+  --card: #ffffff;
+  --text: #002b53;
+  --text-soft: #5b6b7c;
+  --line: #d5dbe3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: "Roboto", "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+}
+
+/* ---------- Header ---------- */
+.board__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 16px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.board__back {
+  display: grid;
+  place-items: center;
+  width: 44px; /* tamaño mínimo cómodo para el dedo en móvil */
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.board__back:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.board__heading {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: inherit;
+}
+
+/* ---------- Contenido ---------- */
+.board__content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.board__state {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--text-soft);
+}
+
+.board__button {
+  margin-top: 8px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.board__button:hover {
+  background: var(--navy-dark);
+}
+
+/* ---------- Grid: se adapta solo al ancho de pantalla ---------- */
+.board__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 480px) {
+  .board__content {
+    padding: 16px 12px 32px;
+  }
+
+  .board__grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+}
