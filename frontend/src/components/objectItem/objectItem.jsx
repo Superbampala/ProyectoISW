@@ -23,7 +23,7 @@ function getTimeLeft(iso, now) {
 }
 
 export default function ObjectItem({ obj }) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
 
   // actualiza la hora actual cada 30 segundos
   useEffect(() => {

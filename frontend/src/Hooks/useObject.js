@@ -7,9 +7,6 @@ export function usePendingObjects() {
   const [error, setError] = useState(null);
 
   const fetchPendingObjects = useCallback(async (signal) => {
-    setLoading(true);
-    setError(null);
-
     try {
       const response = await fetch(`${API_URL}/objects`, { signal });
 
@@ -18,6 +15,7 @@ export function usePendingObjects() {
       }
 
       const data = await response.json();
+      setError(null);
       setObjects(data);
     } catch (requestError) {
       if (requestError.name !== "AbortError") {
@@ -30,6 +28,8 @@ export function usePendingObjects() {
 
   useEffect(() => {
     const controller = new AbortController();
+    // La petición sincroniza el listado con la API al montar el componente.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPendingObjects(controller.signal);
     return () => controller.abort();
     // si fetchPendingObjects cambia, se vuelve a ejecutar el efecto
@@ -37,7 +37,10 @@ export function usePendingObjects() {
 
   //refresh permite ver los cambios actualizados desde la bd
   const refetch = useCallback(
-    () => fetchPendingObjects(),
+    () => {
+      setLoading(true);
+      return fetchPendingObjects();
+    },
     // si fetchPendingObjects cambia, se vuelve a crear la función refetch
     [fetchPendingObjects],
   );
@@ -48,11 +51,13 @@ export function usePendingObjects() {
 export function useCreateObject() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [confirmation, setConfirmation] = useState(null);
 
   const createObject = useCallback(async (objectData) => {
     setLoading(true);
     setError(null);
+    setFieldErrors({});
     setConfirmation(null);
 
     try {
@@ -66,11 +71,14 @@ export function useCreateObject() {
         body: JSON.stringify(objectData),
       });
       const data = await response.json();
-
+      // Manejo de errores de validación de campos, todos los errores de validación se envían en un objeto con la propiedad "detalles"
       if (!response.ok) {
-        const validationError = data.detalles?.[0]?.mensaje;
+        const errors = Object.fromEntries(
+          (data.detalles || []).map(({ campo, mensaje }) => [campo, mensaje]),
+        );
+        setFieldErrors(errors);
         throw new Error(
-          validationError || data.error || `No se pudo registrar el objeto (${response.status})`,
+          data.error || `No se pudo registrar el objeto (${response.status})`,
         );
       }
 
@@ -84,7 +92,7 @@ export function useCreateObject() {
     }
   }, []);
 
-  return { createObject, loading, error, confirmation };
+  return { createObject, loading, error, fieldErrors, confirmation };
 }
 
 export function useDeliveryPoints() {
