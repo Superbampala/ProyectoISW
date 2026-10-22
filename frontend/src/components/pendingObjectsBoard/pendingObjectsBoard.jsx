@@ -1,9 +1,12 @@
-import { useGetAllPendingObjects } from "../../Hooks/useObject";
+import { usePendingObjects } from "../../Hooks/useObject";
 import "./pendingObjectsBoard.css";
 import ObjectItem from "../pendingObjectItem/pendingObjectItem";
 
-export default function ObjectsBoard({ onBack = () => {} }) {
-  const { objects, loading, error, refetch } = useGetAllPendingObjects();
+export default function ObjectsBoard({
+  onBack = () => {},
+}) {
+  const { objects, loading, error, refetch, isUserScope } =
+    usePendingObjects();
 
   return (
     <div className="board">
@@ -11,7 +14,9 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         <button className="board__back" onClick={onBack} aria-label="Volver">
           <BackIcon />
         </button>
-        <h1 className="board__heading">Objetos perdidos</h1>
+        <h1 className="board__heading">
+          {isUserScope ? "Mis objetos pendientes" : "Objetos pendientes"}
+        </h1>
       </header>
 
       <main className="board__content">
@@ -27,7 +32,11 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         )}
 
         {!loading && !error && objects.length === 0 && (
-          <p className="board__state">No hay objetos.</p>
+          <p className="board__state">
+            {isUserScope
+              ? "No tienes objetos pendientes."
+              : "No hay objetos pendientes."}
+          </p>
         )}
 
         {!loading && !error && objects.length > 0 && (
