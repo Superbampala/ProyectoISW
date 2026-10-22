@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api/config";
 
-export function useGetPendingObjects() {
+export function useGetAllPendingObjects() {
   const [objects, setObjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,10 +11,18 @@ export function useGetPendingObjects() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/objects`, { signal });
+      const response = await fetch(`${API_URL}/objects/pending`, {
+        signal,
+        headers: {
+          "x-user-id": "2",
+          "x-user-role": "ADMIN_PUNTO",
+        },
+      });
 
       if (!response.ok) {
-        throw new Error(`No se pudieron obtener los objetos (${response.status})`);
+        throw new Error(
+          `No se pudieron obtener los objetos (${response.status})`,
+        );
       }
 
       const data = await response.json();
@@ -45,6 +53,52 @@ export function useGetPendingObjects() {
   return { objects, loading, error, refetch };
 }
 
+export function useGetPendingObjectsByUser() {
+  const [objects, setObjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchPendingObjectsByUser = useCallback(async (signal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/objects/pending/user`, {
+        signal,
+        headers: {
+          "x-user-id": "1",
+          "x-user-role": "USUARIO_UBB",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(
+          `No se pudieron obtener los objetos pendientes del usuario (${response.status})`,
+        );
+      }
+      const data = await response.json();
+      setObjects(data);
+    } catch (requestError) {
+      if (requestError.name !== "AbortError") {
+        setError(requestError.message);
+      }
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchPendingObjectsByUser(controller.signal);
+    return () => controller.abort();
+  }, [fetchPendingObjectsByUser]);
+
+  const refetch = useCallback(
+    () => fetchPendingObjectsByUser(),
+    [fetchPendingObjectsByUser],
+  );
+
+  return { objects, loading, error, refetch };
+}
+
 export function useCreateObject() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -70,7 +124,9 @@ export function useCreateObject() {
       if (!response.ok) {
         const validationError = data.detalles?.[0]?.mensaje;
         throw new Error(
-          validationError || data.error || `No se pudo registrar el objeto (${response.status})`,
+          validationError ||
+            data.error ||
+            `No se pudo registrar el objeto (${response.status})`,
         );
       }
 
@@ -225,8 +281,7 @@ export function useApproveObject() {
     } catch (requestError) {
       setError(requestError.message);
       throw requestError;
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   }, []);
@@ -255,14 +310,12 @@ export function useGetApprovedObjects() {
       }
       const data = await response.json();
       setObjects(data);
-    }
-    catch (requestError) {
+    } catch (requestError) {
       // Si la solicitud fue abortada, no se establece el error
       if (requestError.name !== "AbortError") {
         setError(requestError.message);
       }
-    }
-    finally {
+    } finally {
       if (!signal?.aborted) setLoading(false);
     }
   }, []);

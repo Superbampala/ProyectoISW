@@ -10,7 +10,7 @@ export const getObjectOptions = async (req, res) => {
   }
 };
 
-export const getPendingObjects = async (req, res) => {
+export const getAllPendingObjects = async (req, res) => {
   try {
     if (!["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol)) {
       return res.status(403).json({
@@ -18,11 +18,27 @@ export const getPendingObjects = async (req, res) => {
       });
     }
 
-    const pendingObjects = await objectService.getPendingObjects();
+    const pendingObjects = await objectService.getAllPendingObjects();
     res.status(200).json(pendingObjects);
   } catch (error) {
     console.error("Error al obtener los objetos pendientes:", error);
     res.status(500).json({ error: "Error al obtener los objetos pendientes" });
+  }
+};
+
+export const getPendingObjectsByUser = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Se requiere autenticación para revisar pre-inscripciones",
+      });
+    }
+
+    const pendingObjects = await objectService.getPendingObjectsByUser(req.user.id);
+    res.status(200).json(pendingObjects);
+  } catch (error) {
+    console.error("Error al obtener los objetos pendientes del usuario:", error);
+    res.status(500).json({ error: "Error al obtener los objetos pendientes del usuario" });
   }
 };
 
