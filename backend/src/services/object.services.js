@@ -134,3 +134,10 @@ export const updateObject = (id, data) => {
     data,
   });
 };
+
+export const approveObject = (id) => {
+  return prisma.objeto.update({
+    where: { id: Number(id) },
+    data: { estado: "APROBADO" },
+  });
+}

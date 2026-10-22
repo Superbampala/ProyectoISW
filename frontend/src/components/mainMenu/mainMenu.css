@@ -1,0 +1,188 @@
+:root {
+  --navy: #002b53;
+  --navy-dark: #001f3c;
+  --bg: #eef1f5;
+  --card: #ffffff;
+  --text: #002b53;
+  --text-soft: #5b6b7c;
+  --line: #d5dbe3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: "Roboto", "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+}
+
+.menu {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.menu__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 0 16px 0 24px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.menu__heading {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.menu__logout {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.menu__logout:hover,
+.menu__logout:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.menu__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  max-width: 1200px;
+  min-height: calc(100vh - 64px);
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.menu__actions {
+  display: grid;
+  gap: 20px;
+}
+
+.menu__card {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 112px;
+  padding: 18px 20px;
+  border: 0;
+  border-left: 6px solid var(--navy);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 2px 6px rgba(0, 43, 83, 0.15);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu__card:hover,
+.menu__card:focus-visible {
+  box-shadow: 0 4px 10px rgba(0, 43, 83, 0.22);
+}
+
+.menu__card:focus-visible,
+.menu__create:focus-visible,
+.menu__logout:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 3px;
+}
+
+.menu__card-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+}
+
+.menu__card-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0 16px;
+}
+
+.menu__card-copy strong {
+  font-size: 1.1rem;
+}
+
+.menu__card-copy span {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.menu__card > svg {
+  flex: 0 0 auto;
+  color: var(--navy);
+}
+
+.menu__create {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 64px;
+  height: 64px;
+  margin-top: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(0, 43, 83, 0.3);
+  cursor: pointer;
+}
+
+.menu__create:hover {
+  background: var(--navy-dark);
+}
+
+@media (max-width: 480px) {
+  .menu__header {
+    padding-left: 16px;
+  }
+
+  .menu__heading {
+    max-width: 260px;
+    font-size: 1.1rem;
+  }
+
+  .menu__content {
+    padding: 16px 12px 32px;
+  }
+
+  .menu__actions {
+    gap: 12px;
+  }
+
+  .menu__card {
+    min-height: 96px;
+    padding: 14px 12px;
+  }
+
+  .menu__card-icon {
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .menu__card-copy {
+    margin: 0 10px;
+  }
+}

@@ -23,7 +23,7 @@ function getTimeLeft(iso, now) {
   return `${hours} h ${minutes} min`;
 }
 
-export default function ObjectItem({ obj }) {
+export default function ObjectItem({ obj, onUpdated }) {
   const [now, setNow] = useState(() => Date.now());
   const [isOpen, setIsOpen] = useState(false);
 
@@ -72,7 +72,11 @@ export default function ObjectItem({ obj }) {
         <p className="card__meta">{obj.lugarHallazgo}</p>
       </div>
       {isOpen && (
-        <ObjectDetailsModal objectId={obj.id} onClose={closeDetails} />
+        <ObjectDetailsModal
+          object={obj}
+          onClose={closeDetails}
+          onSaved={onUpdated}
+        />
       )}
     </li>
   );

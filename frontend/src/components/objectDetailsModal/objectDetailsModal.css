@@ -27,6 +27,54 @@
   color: var(--text-soft);
 }
 
+.object-details-modal form {
+  display: grid;
+  gap: 14px;
+}
+
+.object-details-modal label {
+  display: grid;
+  gap: 6px;
+  color: var(--navy);
+  font-weight: 600;
+}
+
+.object-details-modal input,
+.object-details-modal select,
+.object-details-modal textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px;
+  font: inherit;
+  color: var(--text);
+}
+
+.object-details-modal textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.object-details-modal__error {
+  color: #b91c1c !important;
+}
+
+.object-details-modal button.object-details-modal__approve-button {
+  background: #16a34a;
+}
+
+.object-details-modal button.object-details-modal__approve-button:hover {
+  background: #15803d;
+}
+
+.object-details-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .object-details-modal button {
   border: 0;
   border-radius: 6px;
@@ -34,4 +82,9 @@
   background: var(--navy);
   color: #fff;
   cursor: pointer;
+}
+
+.object-details-modal button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }

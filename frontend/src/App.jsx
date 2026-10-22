@@ -1,24 +1,27 @@
 import { useState } from "react";
 import "./App.css";
-import ObjectsBoard from './components/objectsBoard/objectsBoard';
+
+import MainMenu from "./components/mainMenu/mainMenu";
 import ObjectForm from "./components/objectForm/objectForm";
+import ObjectsBoard from "./components/objectsBoard/objectsBoard";
 
 function App() {
-  const [screen, setScreen] = useState("objects");
+  const [screen, setScreen] = useState("menu");
+
+  if (screen === "form") {
+    return <ObjectForm onBack={() => setScreen("menu")} />;
+  }
+
+  if (screen === "objects") {
+    return <ObjectsBoard onBack={() => setScreen("menu")} />;
+  }
 
   return (
-    <div>
-      <nav className="app__nav" aria-label="Navegación principal">
-        <button onClick={() => setScreen("objects")}>Objetos aprobados</button>
-        <button onClick={() => setScreen("form")}>Encontré un objeto</button>
-      </nav>
-      {screen === "form" ? (
-        <ObjectForm onBack={() => setScreen("objects")} />
-      ) : (
-        <ObjectsBoard />
-      )}
-    </div>
+    <MainMenu
+      onViewObjects={() => setScreen("objects")}
+      onRegisterObject={() => setScreen("form")}
+    />
   );
 }
 
-export default App
+export default App;
