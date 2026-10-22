@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import "./objectItem.css";
+import ObjectDetailsModal from "../objectDetailsModal/objectDetailsModal";
 
 const LIMIT_MS = 2 * 60 * 60 * 1000; // 2 horas en milisegundos
 
@@ -24,6 +25,7 @@ function getTimeLeft(iso, now) {
 
 export default function ObjectItem({ obj }) {
   const [now, setNow] = useState(() => Date.now());
+  const [isOpen, setIsOpen] = useState(false);
 
   // actualiza la hora actual cada 30 segundos
   useEffect(() => {
@@ -35,8 +37,20 @@ export default function ObjectItem({ obj }) {
   const photo = obj.fotos?.[0]?.urlArchivo;
   const timeLeft = getTimeLeft(obj.fechaRegistro, now);
 
+  function openDetails() {
+    setIsOpen(true);
+  }
+
+  function closeDetails() {
+    setIsOpen(false);
+  }
+
   return (
-    <li className="card">
+    <li
+      className="card"
+      role="button"
+      onClick={openDetails}
+    >
       <div className="card__media">
         {photo ? (
           <img src={photo} alt={category} loading="lazy" />
@@ -57,6 +71,9 @@ export default function ObjectItem({ obj }) {
         <p className="card__text">{obj.descripcion}</p>
         <p className="card__meta">{obj.lugarHallazgo}</p>
       </div>
+      {isOpen && (
+        <ObjectDetailsModal objectId={obj.id} onClose={closeDetails} />
+      )}
     </li>
   );
 }

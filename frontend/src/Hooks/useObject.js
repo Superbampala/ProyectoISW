@@ -166,3 +166,39 @@ export function useEditObject() {
     error,
   };
 }
+
+export function useObjectOptions() {
+  const [options, setOptions] = useState({ categorias: [], puntosEntrega: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchObjectOptions = useCallback(async (signal) => {
+    try {
+      const response = await fetch(`${API_URL}/objetos/opciones`, { signal });
+      if (!response.ok) {
+        throw new Error(
+          `No se pudieron obtener las opciones de objetos (${response.status})`,
+        );
+      }
+
+      const data = await response.json();
+      setOptions(data);
+    } catch (requestError) {
+      if (requestError.name !== "AbortError") {
+        setError(requestError.message);
+      }
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    // La petición sincroniza las opciones con la API al montar el componente.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchObjectOptions(controller.signal);
+    return () => controller.abort();
+  }, [fetchObjectOptions]);
+
+  return { options, loading, error };
+}

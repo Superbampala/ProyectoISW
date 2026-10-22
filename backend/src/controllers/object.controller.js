@@ -1,5 +1,15 @@
 import * as objectService from "../services/object.services.js";
 
+export const getObjectOptions = async (req, res) => {
+  try {
+    const options = await objectService.getObjectOptions();
+    res.status(200).json(options);
+  } catch (error) {
+    console.error("Error al obtener las opciones de objetos:", error);
+    res.status(500).json({ error: "Error al obtener las opciones de objetos" });
+  }
+};
+
 export const getPendingObjects = async (req, res) => {
   try {
     if (!["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol)) {

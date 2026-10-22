@@ -17,11 +17,11 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const frontendPath = path.join(__dirname, '../frontend/dist');
+const frontendPath = path.join(__dirname, "../frontend/dist");
 
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
 app.use('/api/objects', objetoRoutes);
 
@@ -38,15 +38,17 @@ app.patch(
 app.get('/api/objects', getApprovedObjects);
 app.get('/api/objects/pending', devAuthMiddleware, getPendingObjects);
 
+app.get("/api/objetos/opciones", getObjectOptions);
+app.get("/api/objects/pending", getPendingObjects);
 
 app.use(express.static(frontendPath));
 
-app.get('/{*splat}', (req, res, next) => {
-  if (req.path.startsWith('/api')) {
+app.get("/{*splat}", (req, res, next) => {
+  if (req.path.startsWith("/api")) {
     return next();
   }
 
-  res.sendFile(path.join(frontendPath, 'index.html'));
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 app.listen(PORT, () => {
