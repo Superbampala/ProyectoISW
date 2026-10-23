@@ -2,16 +2,26 @@ import { useState } from "react";
 import "./App.css";
 
 import MainMenu from "./components/mainMenu/mainMenu";
-import ObjectsBoard from "./components/objectsBoard/objectsBoard";
+import PendingObjectsBoard from "./components/pendingObjectsBoard/pendingObjectsBoard";
+import ApprovedObjectsBoard from "./components/approvedObject/approvedObject";
 
 function App() {
-  const [showObjectsBoard, setShowObjectsBoard] = useState(false);
+  const [view, setView] = useState("menu");
 
-  if (showObjectsBoard) {
-    return <ObjectsBoard onBack={() => setShowObjectsBoard(false)} />;
+  if (view === "approved") {
+    return <ApprovedObjectsBoard onBack={() => setView("menu")} />;
   }
 
-  return <MainMenu onViewObjects={() => setShowObjectsBoard(true)} />;
+  if (view === "pending") {
+    return <PendingObjectsBoard onBack={() => setView("menu")} />;
+  }
+
+  return (
+    <MainMenu
+      onViewApprovedObjects={() => setView("approved")}
+      onViewPendingObjects={() => setView("pending")}
+    />
+  );
 }
 
 export default App;

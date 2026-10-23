@@ -1,6 +1,16 @@
 import "./mainMenu.css";
 
-export default function MainMenu({ onViewObjects = () => {} }) {
+export default function MainMenu({
+  onViewApprovedObjects = () => {},
+  onViewPendingObjects = () => {},
+}) {
+  // Solo de prueba, se debe reemplazar cuando se implemente la autenticación.
+  const user = {
+    rol: "ADMIN_PUNTO",
+  };
+  const pendingObjectsTitle =
+    user.rol === "USUARIO_UBB" ? "Mis objetos pendientes" : "Objetos pendientes";
+
   return (
     <div className="menu">
       <header className="menu__header">
@@ -12,7 +22,11 @@ export default function MainMenu({ onViewObjects = () => {} }) {
 
       <main className="menu__content">
         <div className="menu__actions">
-          <button className="menu__card" type="button">
+          <button
+            className="menu__card"
+            type="button"
+            onClick={onViewApprovedObjects}
+          >
             <span className="menu__card-icon">
               <ListIcon />
             </span>
@@ -23,13 +37,17 @@ export default function MainMenu({ onViewObjects = () => {} }) {
             <ArrowIcon />
           </button>
 
-          <button className="menu__card" type="button" onClick={onViewObjects}>
+          <button
+            className="menu__card"
+            type="button"
+            onClick={onViewPendingObjects}
+          >
             <span className="menu__card-icon">
               <SearchIcon />
             </span>
             <span className="menu__card-copy">
-              <strong>Objetos pendientes</strong>
-              <span>Revisá los objetos encontrados recientemente</span>
+              <strong>{pendingObjectsTitle}</strong>
+              <span>Revisar los objetos encontrados recientemente</span>
             </span>
             <ArrowIcon />
           </button>

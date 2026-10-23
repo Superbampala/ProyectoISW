@@ -8,7 +8,8 @@ import objetoRoutes from './src/routes/objeto.routes.js';
 import {
   editObject,
   getApprovedObjects,
-  getPendingObjects,
+  getAllPendingObjects,
+  getPendingObjectsByUser,
   approveObject,
   getObjectOptions
 } from "./src/controllers/object.controller.js";
@@ -39,12 +40,12 @@ app.patch(
 );
 
 app.get('/api/objects', getApprovedObjects);
-app.get('/api/objects/pending', devAuthMiddleware, getPendingObjects);
+app.get('/api/objects/pending', devAuthMiddleware, getAllPendingObjects);
+app.get('/api/objects/pending/user', devAuthMiddleware, getPendingObjectsByUser);
 
 app.patch("/api/objetos/:id/aprobar", devAuthMiddleware, approveObject);
 
 app.get("/api/objetos/opciones", getObjectOptions);
-app.get("/api/objects/pending", getPendingObjects);
 
 app.use(express.static(frontendPath));
 

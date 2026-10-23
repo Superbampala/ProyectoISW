@@ -1,4 +1,4 @@
-import "./objectDetailsModal.css";
+import "./pendingObjectDetailsModal.css";
 import { useState } from "react";
 import { useEditObject, useObjectOptions, useApproveObject } from "../../Hooks/useObject";
 
@@ -37,7 +37,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
 
   //solo de prueba, se debe eliminar cuando se implemente la autenticación
   const user = {
-    rol: "ADMIN_PUNTO",
+    rol: "USUARIO_UBB",
   };
 
   const canApprove = user.rol === "ADMIN_PUNTO" || user.rol==="ADMIN_SISTEMA";

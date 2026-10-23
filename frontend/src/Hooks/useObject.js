@@ -1,48 +1,63 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api/config";
 
-export function usePendingObjects() {
+export function usePendingObjects(userRole = "USUARIO_UBB") {
   const [objects, setObjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isUserScope = userRole === "USUARIO_UBB";
 
-  const fetchPendingObjects = useCallback(async (signal) => {
-    setLoading(true);
-    setError(null);
+  const fetchPendingObjects = useCallback(
+    async (signal) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch(`${API_URL}/objects`, { signal });
+      const endpoint = isUserScope
+        ? "/objects/pending/user"
+        : "/objects/pending";
 
-      if (!response.ok) {
-        throw new Error(`No se pudieron obtener los objetos (${response.status})`);
+      try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+          signal,
+          headers: {
+            // Temporal para dev-auth; se reemplazará al conectar la autenticación real.
+            // Temporal para probar con un usuario UBB que tiene objetos pendientes.
+            "x-user-id": isUserScope ? "11" : "2",
+            "x-user-role": isUserScope ? "USUARIO_UBB" : "ADMIN_PUNTO",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `No se pudieron obtener los objetos pendientes (${response.status})`,
+          );
+        }
+
+        const data = await response.json();
+        setObjects(data);
+      } catch (requestError) {
+        if (requestError.name !== "AbortError") {
+          setError(requestError.message);
+        }
+      } finally {
+        if (!signal?.aborted) setLoading(false);
       }
-
-      const data = await response.json();
-      setObjects(data);
-    } catch (requestError) {
-      if (requestError.name !== "AbortError") {
-        setError(requestError.message);
-      }
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, []);
+    },
+    [isUserScope],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
     fetchPendingObjects(controller.signal);
     return () => controller.abort();
-    // si fetchPendingObjects cambia, se vuelve a ejecutar el efecto
   }, [fetchPendingObjects]);
 
-  //refresh permite ver los cambios actualizados desde la bd
   const refetch = useCallback(
     () => fetchPendingObjects(),
-    // si fetchPendingObjects cambia, se vuelve a crear la función refetch
     [fetchPendingObjects],
   );
 
-  return { objects, loading, error, refetch };
+  return { objects, loading, error, refetch, isUserScope };
 }
 
 export function useCreateObject() {
@@ -70,7 +85,9 @@ export function useCreateObject() {
       if (!response.ok) {
         const validationError = data.detalles?.[0]?.mensaje;
         throw new Error(
-          validationError || data.error || `No se pudo registrar el objeto (${response.status})`,
+          validationError ||
+            data.error ||
+            `No se pudo registrar el objeto (${response.status})`,
         );
       }
 
@@ -225,8 +242,7 @@ export function useApproveObject() {
     } catch (requestError) {
       setError(requestError.message);
       throw requestError;
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   }, []);
@@ -236,4 +252,45 @@ export function useApproveObject() {
     loading,
     error,
   };
+}
+
+export function useGetApprovedObjects() {
+  const [objects, setObjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchApprovedObjects = useCallback(async (signal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/objects`, { signal });
+      if (!response.ok) {
+        throw new Error(
+          `No se pudieron obtener los objetos aprobados (${response.status})`,
+        );
+      }
+      const data = await response.json();
+      setObjects(data);
+    } catch (requestError) {
+      // Si la solicitud fue abortada, no se establece el error
+      if (requestError.name !== "AbortError") {
+        setError(requestError.message);
+      }
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchApprovedObjects(controller.signal);
+    return () => controller.abort();
+  }, [fetchApprovedObjects]);
+
+  const refetch = useCallback(
+    () => fetchApprovedObjects(),
+    [fetchApprovedObjects],
+  );
+
+  return { objects, loading, error, refetch };
 }
