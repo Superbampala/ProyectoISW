@@ -2,8 +2,8 @@ import { useState } from "react";
 import "./App.css";
 
 import MainMenu from "./components/mainMenu/mainMenu";
-import PendingObjectsBoard from "./components/pendingObjectsBoard/pendingObjectsBoard";
-import ApprovedObjectsBoard from "./components/approvedObject/approvedObject";
+import PendingObjectsBoard from "./components/pending/pendingObjectsBoard/pendingObjectsBoard";
+import ApprovedObjectsBoard from "./components/approved/approvedObject/approvedObject";
 
 function App() {
   const [view, setView] = useState("menu");

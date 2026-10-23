@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useCreateObject, useDeliveryPoints } from "../../Hooks/useObject";
 import "./objectForm.css";
+import { BackIcon } from "../icons/icons";
 
 const categories = [
   ["DOCUMENTOS_Y_TARJETAS", "Documentos y tarjetas"],
@@ -145,13 +146,5 @@ export default function ObjectForm({ onBack = () => {} }) {
         </form>
       </main>
     </div>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-      <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }

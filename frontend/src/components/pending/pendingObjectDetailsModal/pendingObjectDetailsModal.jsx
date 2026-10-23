@@ -1,6 +1,6 @@
 import "./pendingObjectDetailsModal.css";
 import { useState } from "react";
-import { useEditObject, useObjectOptions, useApproveObject } from "../../Hooks/useObject";
+import { useEditObject, useObjectOptions, useApproveObject } from "../../../Hooks/useObject";
 
 const allowedFields = [
   "categoria",

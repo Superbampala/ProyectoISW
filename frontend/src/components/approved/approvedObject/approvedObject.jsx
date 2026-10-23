@@ -1,9 +1,10 @@
-import { useGetApprovedObjects } from "../../Hooks/useObject";
-import "../pendingObjectsBoard/pendingObjectsBoard.css";
+import { useGetApprovedObjects } from "../../../Hooks/useObject";
+import "../../pending/pendingObjectsBoard/pendingObjectsBoard.css";
 import ObjectItem from "../approvedObjectItem/approvedObjectItem";
+import { BackIcon } from "../../icons/icons";
 
 export default function ObjectsBoard({ onBack = () => {} }) {
-  const { objects, loading, error } = useGetApprovedObjects();
+  const { objects, loading, error, refetch } = useGetApprovedObjects();
 
   return (
     <div className="board">
@@ -39,20 +40,5 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         )}
       </main>
     </div>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-      <path
-        d="M15 5l-7 7 7 7"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
