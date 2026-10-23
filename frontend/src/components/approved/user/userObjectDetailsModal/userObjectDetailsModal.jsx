@@ -1,4 +1,4 @@
-import "./approvedObjectDetailsModal.css";
+import "./userObjectDetailsModal.css";
 
 function formatCategory(category) {
   return category

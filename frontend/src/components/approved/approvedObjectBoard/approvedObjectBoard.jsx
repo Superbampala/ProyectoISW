@@ -1,10 +1,16 @@
 import { useGetApprovedObjects } from "../../../Hooks/useObject";
-import "../../pending/pendingObjectsBoard/pendingObjectsBoard.css";
-import ObjectItem from "../approvedObjectItem/approvedObjectItem";
+import "./approvedObjectBoard.css";
+import UserObjectItem from "../user/userObjectItem/userObjectItem";
+import AdminObjectItem from "../admin/adminObjectItem/adminObjectItem";
 import { BackIcon } from "../../icons/icons";
 
 export default function ObjectsBoard({ onBack = () => {} }) {
   const { objects, loading, error, refetch } = useGetApprovedObjects();
+
+  //solo de prueba, se debe eliminar cuando se implemente la autenticación
+  const user = {
+    rol: "USUARIO_UBB",
+  };
 
   return (
     <div className="board">
@@ -34,7 +40,11 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         {!loading && !error && objects.length > 0 && (
           <ul className="board__grid">
             {objects.map((obj) => (
-              <ObjectItem key={obj.id} obj={obj} />
+              user.rol === "USUARIO_UBB" ? (
+                <UserObjectItem key={obj.id} obj={obj} />
+              ) : (
+                <AdminObjectItem key={obj.id} obj={obj} />
+              )
             ))}
           </ul>
         )}
