@@ -3,7 +3,7 @@ import "./App.css";
 
 import MainMenu from "./components/mainMenu/mainMenu";
 import PendingObjectsBoard from "./components/pending/pendingObjectsBoard/pendingObjectsBoard";
-import ApprovedObjectsBoard from "./components/approved/approvedObject/approvedObject";
+import ApprovedObjectsBoard from "./components/approved/approvedObjectBoard/approvedObjectBoard";
 
 function App() {
   const [view, setView] = useState("menu");

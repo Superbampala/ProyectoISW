@@ -1,13 +1,13 @@
 import { useState} from "react";
-import "./approvedObjectItem.css";
-import ObjectDetailsModal from "../approvedObjectDetailsModal/approvedObjectDetailsModal";
+import "./userObjectItem.css";
+import ObjectDetailsModal from "../userObjectDetailsModal/userObjectDetailsModal";
 
 function formatCategory(categoria = "") {
   const text = categoria.replaceAll("_", " ").toLowerCase();
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-export default function ObjectItem({ obj }) {
+export default function UserObjectItem({ obj }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const category = formatCategory(obj.categoria);
