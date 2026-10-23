@@ -134,15 +134,6 @@ export const getApprovedObjects = () => {
       descripcion: true,
       lugarHallazgo: true,
       fechaRegistro: true,
-      titularRut: true,
-      titularNombre: true,
-      bitacora: {
-        select: { fechaHora: true },
-        orderBy: { fechaHora: "asc" },
-      },
-      fotos: {
-        select: { urlArchivo: true },
-      },
     },
   });
 };

@@ -22,7 +22,7 @@ export function usePendingObjects(userRole = "USUARIO_UBB") {
           headers: {
             // Temporal para dev-auth; se reemplazará al conectar la autenticación real.
             // Temporal para probar con un usuario UBB que tiene objetos pendientes.
-            "x-user-id": isUserScope ? "1" : "2",
+            "x-user-id": isUserScope ? "11" : "2",
             "x-user-role": isUserScope ? "USUARIO_UBB" : "ADMIN_PUNTO",
           },
         });

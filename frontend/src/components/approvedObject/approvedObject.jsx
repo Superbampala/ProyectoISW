@@ -3,7 +3,7 @@ import "../pendingObjectsBoard/pendingObjectsBoard.css";
 import ObjectItem from "../approvedObjectItem/approvedObjectItem";
 
 export default function ObjectsBoard({ onBack = () => {} }) {
-  const { objects, loading, error, refetch } = useGetApprovedObjects();
+  const { objects, loading, error } = useGetApprovedObjects();
 
   return (
     <div className="board">
@@ -33,7 +33,7 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         {!loading && !error && objects.length > 0 && (
           <ul className="board__grid">
             {objects.map((obj) => (
-              <ObjectItem key={obj.id} obj={obj} onUpdated={refetch} />
+              <ObjectItem key={obj.id} obj={obj} />
             ))}
           </ul>
         )}

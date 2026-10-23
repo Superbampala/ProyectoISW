@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import "./pendingObjectItem.css";
-import ObjectDetailsModal from "../objectDetailsModal/objectDetailsModal";
+import ObjectDetailsModal from "../pendingObjectDetailsModal/pendingObjectDetailsModal";
 
 const LIMIT_MS = 2 * 60 * 60 * 1000; // 2 horas en milisegundos
 
