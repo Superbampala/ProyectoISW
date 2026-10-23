@@ -1,12 +1,9 @@
-import { usePendingObjects } from "../../Hooks/useObject";
-import "./pendingObjectsBoard.css";
-import ObjectItem from "../pendingObjectItem/pendingObjectItem";
+import { useGetApprovedObjects } from "../../../Hooks/useObject";
+import "../../pending/pendingObjectsBoard/pendingObjectsBoard.css";
+import ObjectItem from "../approvedObjectItem/approvedObjectItem";
 
-export default function ObjectsBoard({
-  onBack = () => {},
-}) {
-  const { objects, loading, error, refetch, isUserScope } =
-    usePendingObjects();
+export default function ObjectsBoard({ onBack = () => {} }) {
+  const { objects, loading, error, refetch } = useGetApprovedObjects();
 
   return (
     <div className="board">
@@ -14,9 +11,7 @@ export default function ObjectsBoard({
         <button className="board__back" onClick={onBack} aria-label="Volver">
           <BackIcon />
         </button>
-        <h1 className="board__heading">
-          {isUserScope ? "Mis objetos pendientes" : "Objetos pendientes"}
-        </h1>
+        <h1 className="board__heading">Objetos perdidos</h1>
       </header>
 
       <main className="board__content">
@@ -32,17 +27,13 @@ export default function ObjectsBoard({
         )}
 
         {!loading && !error && objects.length === 0 && (
-          <p className="board__state">
-            {isUserScope
-              ? "No tienes objetos pendientes."
-              : "No hay objetos pendientes."}
-          </p>
+          <p className="board__state">No hay objetos perdidos</p>
         )}
 
         {!loading && !error && objects.length > 0 && (
           <ul className="board__grid">
             {objects.map((obj) => (
-              <ObjectItem key={obj.id} obj={obj} onUpdated={refetch} />
+              <ObjectItem key={obj.id} obj={obj} />
             ))}
           </ul>
         )}
