@@ -103,26 +103,30 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
             </select>
           </label>
 
-          <label>
-            RUT del titular
-            <input
-              name="titularRut"
-              value={form.titularRut}
-              onChange={handleChange}
-              disabled={saving}
-              placeholder="12.345.678-9"
-            />
-          </label>
+          {form.categoria === "DOCUMENTOS_Y_TARJETAS" && (
+            <>
+              <label>
+                RUT del titular
+                <input
+                  name="titularRut"
+                  value={form.titularRut}
+                  onChange={handleChange}
+                  disabled={saving}
+                  placeholder="xx.xxx.xxx-x"
+                />
+              </label>
 
-          <label>
-            Nombre del titular
-            <input
-              name="titularNombre"
-              value={form.titularNombre}
-              onChange={handleChange}
-              disabled={saving}
-            />
-          </label>
+              <label>
+                Nombre del titular
+                <input
+                  name="titularNombre"
+                  value={form.titularNombre}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+              </label>
+            </>
+          )}
 
           <label>
             Descripción

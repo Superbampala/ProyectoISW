@@ -9,7 +9,7 @@ export default function ObjectsBoard({ onBack = () => {} }) {
 
   //solo de prueba, se debe eliminar cuando se implemente la autenticación
   const user = {
-    rol: "USUARIO_UBB",
+    rol: "Admin_Punto",
   };
 
   return (

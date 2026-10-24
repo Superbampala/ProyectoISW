@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import objetoRoutes from './src/routes/objeto.routes.js';
 import {
-  editObject,
+  updateObject,
   getApprovedObjects,
   getAllPendingObjects,
   getPendingObjectsByUser,
@@ -36,7 +36,7 @@ app.get('/api/health', (req, res) => {
 app.patch(
   '/api/objetos/:id',
   devAuthMiddleware,
-  editObject
+  updateObject
 );
 
 app.get('/api/objects', getApprovedObjects);

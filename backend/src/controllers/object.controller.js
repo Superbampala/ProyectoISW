@@ -87,7 +87,7 @@ export const getDeliveryPoints = async (req, res) => {
   }
 };
 
-export const editObject = async (req, res) => {
+export const updateObject = async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({

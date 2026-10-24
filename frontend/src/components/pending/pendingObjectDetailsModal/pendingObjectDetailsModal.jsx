@@ -37,7 +37,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
 
   //solo de prueba, se debe eliminar cuando se implemente la autenticación
   const user = {
-    rol: "USUARIO_UBB",
+    rol: "ADMIN_PUNTO",
   };
 
   const canApprove = user.rol === "ADMIN_PUNTO" || user.rol==="ADMIN_SISTEMA";
@@ -54,9 +54,10 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   }
 
   async function handleApprove() {
+
     try {
+      await handleSubmit({ preventDefault: () => {} });
       await approveObject(object.id);
-      onSaved?.();
       onClose();
     } catch (error) {
       setFormError(error.message);
@@ -79,9 +80,9 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
       await editObject(object.id, data);
       // actualiza el formulario
       onSaved?.();
-      onClose();
     } catch (error) {
       setFormError(error.message);
+      throw error;
     }
   }
 
@@ -122,26 +123,30 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
             </select>
           </label>
 
-          <label>
-            RUT del titular
-            <input
-              name="titularRut"
-              value={form.titularRut}
-              onChange={handleChange}
-              disabled={saving}
-              placeholder="12.345.678-9"
-            />
-          </label>
+          {form.categoria === "DOCUMENTOS_Y_TARJETAS" && (
+            <>
+              <label>
+                RUT del titular
+                <input
+                  name="titularRut"
+                  value={form.titularRut}
+                  onChange={handleChange}
+                  disabled={saving}
+                  placeholder="xx.xxx.xxx-x"
+                />
+              </label>
 
-          <label>
-            Nombre del titular
-            <input
-              name="titularNombre"
-              value={form.titularNombre}
-              onChange={handleChange}
-              disabled={saving}
-            />
-          </label>
+              <label>
+                Nombre del titular
+                <input
+                  name="titularNombre"
+                  value={form.titularNombre}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+              </label>
+            </>
+          )}
 
           <label>
             Descripción

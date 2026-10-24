@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api/config";
 
-export function usePendingObjects(userRole = "USUARIO_UBB") {
+export function usePendingObjects(userRole = "ADMIN_PUNTO") {
   const [objects, setObjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
