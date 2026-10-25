@@ -294,3 +294,46 @@ export function useGetApprovedObjects() {
 
   return { objects, loading, error, refetch };
 }
+
+export function useDeletePendingObject() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const deletePendingObject = useCallback(async (id) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/objetos/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "2",
+          "x-user-role": "ADMIN_PUNTO",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            `No se pudo eliminar el objeto pendiente (${response.status})`,
+        );
+      }
+
+      return data;
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    deletePendingObject,
+    loading,
+    error,
+  };
+}

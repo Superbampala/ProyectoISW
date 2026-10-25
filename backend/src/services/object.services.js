@@ -172,3 +172,9 @@ export const approveObject = (id) => {
     data: { estado: "APROBADO" },
   });
 }
+
+export const deleteObject = (id) => {
+  return prisma.objeto.delete({
+    where: { id: Number(id) },
+  });
+};

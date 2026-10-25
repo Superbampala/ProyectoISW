@@ -170,7 +170,7 @@ model Foto {
   fechaSubida DateTime @default(now()) @map("fecha_subida")
   objetoId    Int
 
-  objeto Objeto @relation(fields: [objetoId], references: [id])
+  objeto Objeto @relation(fields: [objetoId], references: [id], onDelete: Cascade)
 
   @@map("fotos")
 }
@@ -196,7 +196,7 @@ model Bitacora {
   objetoId  Int
 
   usuario Usuario @relation(fields: [usuarioId], references: [id])
-  objeto  Objeto  @relation(fields: [objetoId], references: [id])
+  objeto  Objeto  @relation(fields: [objetoId], references: [id], onDelete: Cascade)
 
   @@map("bitacora")
 }

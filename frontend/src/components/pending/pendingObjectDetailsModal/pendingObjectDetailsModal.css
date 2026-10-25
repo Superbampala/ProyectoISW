@@ -68,6 +68,14 @@
   background: #15803d;
 }
 
+.object-details-modal button.object-details-modal__delete-button {
+  background: #dc2626;
+}
+
+.object-details-modal button.object-details-modal__delete-button:hover {
+  background: #b91c1c;
+}
+
 .object-details-modal__actions {
   display: flex;
   justify-content: flex-end;
