@@ -2,6 +2,7 @@ import "./mainMenu.css";
 
 export default function MainMenu({
   onViewObjects = () => {},
+  onViewPending = () => {},
   onRegisterObject = () => {},
 }) {
   return (
@@ -15,7 +16,7 @@ export default function MainMenu({
 
       <main className="menu__content">
         <div className="menu__actions">
-          <button className="menu__card" type="button">
+          <button className="menu__card" type="button" onClick={onViewObjects}>
             <span className="menu__card-icon">
               <ListIcon />
             </span>
@@ -26,7 +27,7 @@ export default function MainMenu({
             <ArrowIcon />
           </button>
 
-          <button className="menu__card" type="button" onClick={onViewObjects}>
+          <button className="menu__card" type="button" onClick={onViewPending}>
             <span className="menu__card-icon">
               <SearchIcon />
             </span>

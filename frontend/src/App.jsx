@@ -7,18 +7,31 @@ import ObjectsBoard from "./components/objectsBoard/objectsBoard";
 
 function App() {
   const [screen, setScreen] = useState("menu");
+  const [showPending, setShowPending] = useState(false);
 
   if (screen === "form") {
     return <ObjectForm onBack={() => setScreen("menu")} />;
   }
 
   if (screen === "objects") {
-    return <ObjectsBoard onBack={() => setScreen("menu")} />;
+    return (
+      <ObjectsBoard
+        pending={showPending}
+        onBack={() => setScreen("menu")}
+      />
+    );
   }
 
   return (
     <MainMenu
-      onViewObjects={() => setScreen("objects")}
+      onViewObjects={() => {
+        setShowPending(false);
+        setScreen("objects");
+      }}
+      onViewPending={() => {
+        setShowPending(true);
+        setScreen("objects");
+      }}
       onRegisterObject={() => setScreen("form")}
     />
   );

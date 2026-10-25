@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api/config";
 
-export function usePendingObjects() {
+export function useObjects({ pending = false } = {}) {
   const [objects, setObjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchPendingObjects = useCallback(async (signal) => {
     try {
-      const response = await fetch(`${API_URL}/objects`, { signal });
+      const endpoint = pending ? "/objects/pending" : "/objects";
+      const headers = pending
+        ? { "x-user-id": "2", "x-user-role": "ADMIN_PUNTO" }
+        : undefined;
+      const response = await fetch(`${API_URL}${endpoint}`, { signal, headers });
 
       if (!response.ok) {
         throw new Error(`No se pudieron obtener los objetos (${response.status})`);
@@ -24,7 +28,7 @@ export function usePendingObjects() {
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, []);
+  }, [pending]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -46,6 +50,10 @@ export function usePendingObjects() {
   );
 
   return { objects, loading, error, refetch };
+}
+
+export function usePendingObjects() {
+  return useObjects({ pending: true });
 }
 
 export function useCreateObject() {

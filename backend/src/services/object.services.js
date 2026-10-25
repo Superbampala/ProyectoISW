@@ -81,6 +81,7 @@ export const getPendingObjects = () => {
       descripcion: true,
       lugarHallazgo: true,
       fechaRegistro: true,
+      horaLimite: true,
       titularRut: true,
       titularNombre: true,
       bitacora: {
@@ -103,6 +104,7 @@ export const getApprovedObjects = () => {
       descripcion: true,
       lugarHallazgo: true,
       fechaRegistro: true,
+      horaLimite: true,
       titularRut: true,
       titularNombre: true,
       bitacora: {

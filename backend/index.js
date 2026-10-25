@@ -44,7 +44,6 @@ app.get('/api/objects/pending', devAuthMiddleware, getPendingObjects);
 app.patch("/api/objetos/:id/aprobar", devAuthMiddleware, approveObject);
 
 app.get("/api/objetos/opciones", getObjectOptions);
-app.get("/api/objects/pending", getPendingObjects);
 
 app.use(express.static(frontendPath));
 

@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import "./objectItem.css";
 import ObjectDetailsModal from "../objectDetailsModal/objectDetailsModal";
 
-const LIMIT_MS = 2 * 60 * 60 * 1000; // 2 horas en milisegundos
-
 function formatCategory(categoria = "") {
   const text = categoria.replaceAll("_", " ").toLowerCase();
   return text.charAt(0).toUpperCase() + text.slice(1);
@@ -12,7 +10,7 @@ function formatCategory(categoria = "") {
 // devuelve el tiempo restante como "1 h 23 min", o null si ya pasaron las 2 horas
 function getTimeLeft(iso, now) {
   if (!iso) return null;
-  const remaining = new Date(iso).getTime() + LIMIT_MS - now;
+  const remaining = new Date(iso).getTime() - now;
   if (remaining <= 0) return null;
 
   const totalMinutes = Math.ceil(remaining / 60000);
@@ -35,7 +33,7 @@ export default function ObjectItem({ obj, onUpdated }) {
 
   const category = formatCategory(obj.categoria);
   const photo = obj.fotos?.[0]?.urlArchivo;
-  const timeLeft = getTimeLeft(obj.fechaRegistro, now);
+  const timeLeft = getTimeLeft(obj.horaLimite, now);
 
   function openDetails() {
     setIsOpen(true);
