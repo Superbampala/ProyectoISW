@@ -1,9 +1,13 @@
-import { useObjects } from "../../Hooks/useObject";
-import "./ObjectsBoard.css";
-import ObjectItem from "../objectItem/objectItem";
+import { usePendingObjects } from "../../../Hooks/useObject";
+import "./pendingObjectsBoard.css";
+import ObjectItem from "../pendingObjectItem/pendingObjectItem";
+import { BackIcon } from "../../icons/icons";
 
-export default function ObjectsBoard({ onBack = () => {}, pending = false }) {
-  const { objects, loading, error, refetch } = useObjects({ pending });
+export default function ObjectsBoard({
+  onBack = () => {},
+}) {
+  const { objects, loading, error, refetch, isUserScope } =
+    usePendingObjects();
 
   return (
     <div className="board">
@@ -12,7 +16,7 @@ export default function ObjectsBoard({ onBack = () => {}, pending = false }) {
           <BackIcon />
         </button>
         <h1 className="board__heading">
-          {pending ? "Objetos pendientes" : "Listado de objetos perdidos"}
+          {isUserScope ? "Mis objetos pendientes" : "Objetos pendientes"}
         </h1>
       </header>
 
@@ -30,7 +34,9 @@ export default function ObjectsBoard({ onBack = () => {}, pending = false }) {
 
         {!loading && !error && objects.length === 0 && (
           <p className="board__state">
-            {pending ? "No hay objetos pendientes." : "No hay objetos aprobados."}
+            {isUserScope
+              ? "No tienes objetos pendientes."
+              : "No hay objetos pendientes."}
           </p>
         )}
 
@@ -43,20 +49,5 @@ export default function ObjectsBoard({ onBack = () => {}, pending = false }) {
         )}
       </main>
     </div>
-  );
-}
-
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-      <path
-        d="M15 5l-7 7 7 7"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

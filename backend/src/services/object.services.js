@@ -1,5 +1,14 @@
 import prisma from "../config/prisma.js";
 
+const categorias = [
+  "DOCUMENTOS_Y_TARJETAS",
+  "ELECTRONICA",
+  "ROPA_Y_ACCESORIOS",
+  "LLAVES",
+  "UTILES_Y_MATERIAL_ESTUDIO",
+  "OTROS",
+];
+
 export const createObject = async (objectData) => {
   const {
     categoria,
@@ -72,7 +81,7 @@ export const createObject = async (objectData) => {
   });
 };
 
-export const getPendingObjects = () => {
+export const getAllPendingObjects = () => {
   return prisma.objeto.findMany({
     where: { estado: "PENDIENTE" },
     select: {
@@ -95,9 +104,9 @@ export const getPendingObjects = () => {
   });
 };
 
-export const getApprovedObjects = () => {
+export const getPendingObjectsByUser = (userId) => {
   return prisma.objeto.findMany({
-    where: { estado: "APROBADO" },
+    where: { estado: "PENDIENTE", usuarioHalladorId: Number(userId) },
     select: {
       id: true,
       categoria: true,
@@ -116,12 +125,34 @@ export const getApprovedObjects = () => {
       },
     },
   });
+}
+
+export const getApprovedObjects = () => {
+  return prisma.objeto.findMany({
+    where: { estado: "APROBADO" },
+    select: {
+      id: true,
+      categoria: true,
+      descripcion: true,
+      lugarHallazgo: true,
+      fechaRegistro: true,
+    },
+  });
 };
 
 export const getDeliveryPoints = () => {
   return prisma.puntoEntrega.findMany({
     orderBy: { nombre: "asc" },
   });
+};
+
+export const getObjectOptions = async () => {
+  const puntosEntrega = await getDeliveryPoints();
+
+  return {
+    categorias,
+    puntosEntrega,
+  };
 };
 
 export const getObjectById = (id) => {
@@ -143,3 +174,9 @@ export const approveObject = (id) => {
     data: { estado: "APROBADO" },
   });
 }
+
+export const deleteObject = (id) => {
+  return prisma.objeto.delete({
+    where: { id: Number(id) },
+  });
+};

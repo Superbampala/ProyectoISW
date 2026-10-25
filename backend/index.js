@@ -6,11 +6,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import objetoRoutes from './src/routes/objeto.routes.js';
 import {
-  editObject,
+  updateObject,
   getApprovedObjects,
-  getPendingObjects,
+  getAllPendingObjects,
+  getPendingObjectsByUser,
   approveObject,
-  getObjectOptions
+  getObjectOptions,
+  deletePendingObject
 } from "./src/controllers/object.controller.js";
 import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
 
@@ -35,15 +37,16 @@ app.get('/api/health', (req, res) => {
 app.patch(
   '/api/objetos/:id',
   devAuthMiddleware,
-  editObject
+  updateObject
 );
-
-app.get('/api/objects', getApprovedObjects);
-app.get('/api/objects/pending', devAuthMiddleware, getPendingObjects);
-
 app.patch("/api/objetos/:id/aprobar", devAuthMiddleware, approveObject);
 
+app.get('/api/objects', getApprovedObjects);
+app.get('/api/objects/pending', devAuthMiddleware, getAllPendingObjects);
+app.get('/api/objects/pending/user', devAuthMiddleware, getPendingObjectsByUser);
 app.get("/api/objetos/opciones", getObjectOptions);
+
+app.delete("/api/objetos/:id", devAuthMiddleware, deletePendingObject);
 
 app.use(express.static(frontendPath));
 

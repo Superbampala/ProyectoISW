@@ -1,34 +1,49 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../api/config";
 
-export function useObjects({ pending = false } = {}) {
+export function usePendingObjects(userRole = "ADMIN_PUNTO") {
   const [objects, setObjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isUserScope = userRole === "USUARIO_UBB";
 
-  const fetchPendingObjects = useCallback(async (signal) => {
-    try {
-      const endpoint = pending ? "/objects/pending" : "/objects";
-      const headers = pending
-        ? { "x-user-id": "2", "x-user-role": "ADMIN_PUNTO" }
-        : undefined;
-      const response = await fetch(`${API_URL}${endpoint}`, { signal, headers });
-
-      if (!response.ok) {
-        throw new Error(`No se pudieron obtener los objetos (${response.status})`);
-      }
-
-      const data = await response.json();
+  const fetchPendingObjects = useCallback(
+    async (signal) => {
+      setLoading(true);
       setError(null);
-      setObjects(data);
-    } catch (requestError) {
-      if (requestError.name !== "AbortError") {
-        setError(requestError.message);
+
+      const endpoint = isUserScope
+        ? "/objects/pending/user"
+        : "/objects/pending";
+      try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+          signal,
+          headers: {
+            // Temporal para dev-auth; se reemplazará al conectar la autenticación real.
+            // Temporal para probar con un usuario UBB que tiene objetos pendientes.
+            "x-user-id": isUserScope ? "11" : "2",
+            "x-user-role": isUserScope ? "USUARIO_UBB" : "ADMIN_PUNTO",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `No se pudieron obtener los objetos pendientes (${response.status})`,
+          );
+        }
+
+        const data = await response.json();
+        setObjects(data);
+      } catch (requestError) {
+        if (requestError.name !== "AbortError") {
+          setError(requestError.message);
+        }
+      } finally {
+        if (!signal?.aborted) setLoading(false);
       }
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, [pending]);
+    },
+    [isUserScope],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -36,25 +51,16 @@ export function useObjects({ pending = false } = {}) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPendingObjects(controller.signal);
     return () => controller.abort();
-    // si fetchPendingObjects cambia, se vuelve a ejecutar el efecto
   }, [fetchPendingObjects]);
 
-  //refresh permite ver los cambios actualizados desde la bd
   const refetch = useCallback(
-    () => {
-      setLoading(true);
-      return fetchPendingObjects();
-    },
-    // si fetchPendingObjects cambia, se vuelve a crear la función refetch
+    () => fetchPendingObjects(),
     [fetchPendingObjects],
   );
 
-  return { objects, loading, error, refetch };
+  return { objects, loading, error, refetch, isUserScope };
 }
 
-export function usePendingObjects() {
-  return useObjects({ pending: true });
-}
 
 export function useCreateObject() {
   const [loading, setLoading] = useState(false);
@@ -241,14 +247,98 @@ export function useApproveObject() {
     } catch (requestError) {
       setError(requestError.message);
       throw requestError;
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   }, []);
 
   return {
     approveObject,
+    loading,
+    error,
+  };
+}
+
+export function useGetApprovedObjects() {
+  const [objects, setObjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchApprovedObjects = useCallback(async (signal) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL}/objects`, { signal });
+      if (!response.ok) {
+        throw new Error(
+          `No se pudieron obtener los objetos aprobados (${response.status})`,
+        );
+      }
+      const data = await response.json();
+      setObjects(data);
+    } catch (requestError) {
+      // Si la solicitud fue abortada, no se establece el error
+      if (requestError.name !== "AbortError") {
+        setError(requestError.message);
+      }
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchApprovedObjects(controller.signal);
+    return () => controller.abort();
+  }, [fetchApprovedObjects]);
+
+  const refetch = useCallback(
+    () => fetchApprovedObjects(),
+    [fetchApprovedObjects],
+  );
+
+  return { objects, loading, error, refetch };
+}
+
+export function useDeletePendingObject() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const deletePendingObject = useCallback(async (id) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/objetos/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "2",
+          "x-user-role": "ADMIN_PUNTO",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            `No se pudo eliminar el objeto pendiente (${response.status})`,
+        );
+      }
+
+      return data;
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    deletePendingObject,
     loading,
     error,
   };

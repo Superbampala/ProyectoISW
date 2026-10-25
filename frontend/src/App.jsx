@@ -3,36 +3,29 @@ import "./App.css";
 
 import MainMenu from "./components/mainMenu/mainMenu";
 import ObjectForm from "./components/objectForm/objectForm";
-import ObjectsBoard from "./components/objectsBoard/objectsBoard";
+import PendingObjectsBoard from "./components/pending/pendingObjectsBoard/pendingObjectsBoard";
+import ApprovedObjectsBoard from "./components/approved/approvedObjectBoard/approvedObjectBoard";
 
 function App() {
-  const [screen, setScreen] = useState("menu");
-  const [showPending, setShowPending] = useState(false);
+  const [view, setView] = useState("menu");
 
-  if (screen === "form") {
-    return <ObjectForm onBack={() => setScreen("menu")} />;
+  if (view === "form") {
+    return <ObjectForm onBack={() => setView("menu")} />;
   }
 
-  if (screen === "objects") {
-    return (
-      <ObjectsBoard
-        pending={showPending}
-        onBack={() => setScreen("menu")}
-      />
-    );
+  if (view === "approved") {
+    return <ApprovedObjectsBoard onBack={() => setView("menu")} />;
+  }
+
+  if (view === "pending") {
+    return <PendingObjectsBoard onBack={() => setView("menu")} />;
   }
 
   return (
     <MainMenu
-      onViewObjects={() => {
-        setShowPending(false);
-        setScreen("objects");
-      }}
-      onViewPending={() => {
-        setShowPending(true);
-        setScreen("objects");
-      }}
-      onRegisterObject={() => setScreen("form")}
+      onViewApprovedObjects={() => setView("approved")}
+      onViewPendingObjects={() => setView("pending")}
+      onRegisterObject={() => setView("form")}
     />
   );
 }

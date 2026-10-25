@@ -1,6 +1,6 @@
-import "./objectDetailsModal.css";
+import "./adminObjectDetailsModal.css";
 import { useState } from "react";
-import { useEditObject, useObjectOptions, useApproveObject } from "../../Hooks/useObject";
+import { useEditObject, useObjectOptions } from "../../../../Hooks/useObject";
 
 const allowedFields = [
   "categoria",
@@ -32,15 +32,6 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     useObjectOptions();
   const { editObject, loading: saving, error: saveError } = useEditObject();
   const [formError, setFormError] = useState(null);
-  const { approveObject } = useApproveObject();
-
-
-  //solo de prueba, se debe eliminar cuando se implemente la autenticación
-  const user = {
-    rol: "ADMIN_PUNTO",
-  };
-
-  const canApprove = user.rol === "ADMIN_PUNTO" || user.rol==="ADMIN_SISTEMA";
 
   function handleBackdropClick(event) {
     event.stopPropagation();
@@ -51,16 +42,6 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((currentForm) => ({ ...currentForm, [name]: value }));
-  }
-
-  async function handleApprove() {
-    try {
-      await approveObject(object.id);
-      onSaved?.();
-      onClose();
-    } catch (error) {
-      setFormError(error.message);
-    }
   }
 
   async function handleSubmit(event) {
@@ -122,26 +103,30 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
             </select>
           </label>
 
-          <label>
-            RUT del titular
-            <input
-              name="titularRut"
-              value={form.titularRut}
-              onChange={handleChange}
-              disabled={saving}
-              placeholder="12.345.678-9"
-            />
-          </label>
+          {form.categoria === "DOCUMENTOS_Y_TARJETAS" && (
+            <>
+              <label>
+                RUT del titular
+                <input
+                  name="titularRut"
+                  value={form.titularRut}
+                  onChange={handleChange}
+                  disabled={saving}
+                  placeholder="xx.xxx.xxx-x"
+                />
+              </label>
 
-          <label>
-            Nombre del titular
-            <input
-              name="titularNombre"
-              value={form.titularNombre}
-              onChange={handleChange}
-              disabled={saving}
-            />
-          </label>
+              <label>
+                Nombre del titular
+                <input
+                  name="titularNombre"
+                  value={form.titularNombre}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+              </label>
+            </>
+          )}
 
           <label>
             Descripción
@@ -194,14 +179,6 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
             <button type="submit" disabled={optionsLoading || saving}>
               {saving ? "Guardando..." : "Guardar cambios"}
             </button>
-            {canApprove && (
-              <button type="button" 
-              onClick={handleApprove}
-              className="object-details-modal__approve-button"
-              disabled={saving}>
-                Aprobar
-              </button>
-            )}
           </div>
         </form>
       </div>
