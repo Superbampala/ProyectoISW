@@ -1,6 +1,11 @@
 import "./pendingObjectDetailsModal.css";
 import { useState } from "react";
-import { useEditObject, useObjectOptions, useApproveObject } from "../../../Hooks/useObject";
+import {
+  useEditObject,
+  useObjectOptions,
+  useApproveObject,
+  useDeletePendingObject,
+} from "../../../Hooks/useObject";
 
 const allowedFields = [
   "categoria",
@@ -28,19 +33,27 @@ function formatCategory(category) {
 
 export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   const [form, setForm] = useState(() => getInitialForm(object));
-  const { options, loading: optionsLoading, error: optionsError } =
-    useObjectOptions();
+  const {
+    options,
+    loading: optionsLoading,
+    error: optionsError,
+  } = useObjectOptions();
   const { editObject, loading: saving, error: saveError } = useEditObject();
+  const {
+    deletePendingObject,
+    loading: deleting,
+    error: deleteError,
+  } = useDeletePendingObject();
   const [formError, setFormError] = useState(null);
   const { approveObject } = useApproveObject();
 
-
   //solo de prueba, se debe eliminar cuando se implemente la autenticación
   const user = {
-    rol: "USUARIO_UBB",
+    rol: "ADMIN_PUNTO",
   };
 
-  const canApprove = user.rol === "ADMIN_PUNTO" || user.rol==="ADMIN_SISTEMA";
+  const canApproveOrDelete =
+    user.rol === "ADMIN_PUNTO" || user.rol === "ADMIN_SISTEMA";
 
   function handleBackdropClick(event) {
     event.stopPropagation();
@@ -55,7 +68,19 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
 
   async function handleApprove() {
     try {
+      await handleSubmit({ preventDefault: () => {} });
       await approveObject(object.id);
+      onClose();
+    } catch (error) {
+      setFormError(error.message);
+    }
+  }
+
+  async function handleDelete() {
+    setFormError(null);
+
+    try {
+      await deletePendingObject(object.id);
       onSaved?.();
       onClose();
     } catch (error) {
@@ -79,9 +104,9 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
       await editObject(object.id, data);
       // actualiza el formulario
       onSaved?.();
-      onClose();
     } catch (error) {
       setFormError(error.message);
+      throw error;
     }
   }
 
@@ -97,10 +122,17 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
         <h2>Detalles del objeto</h2>
         <p>ID del objeto: {object.id}</p>
 
-        {optionsError && <p className="object-details-modal__error">{optionsError}</p>}
-        {formError && <p className="object-details-modal__error">{formError}</p>}
+        {optionsError && (
+          <p className="object-details-modal__error">{optionsError}</p>
+        )}
+        {formError && (
+          <p className="object-details-modal__error">{formError}</p>
+        )}
         {saveError && !formError && (
           <p className="object-details-modal__error">{saveError}</p>
+        )}
+        {deleteError && !formError && (
+          <p className="object-details-modal__error">{deleteError}</p>
         )}
 
         <form onSubmit={handleSubmit}>
@@ -110,7 +142,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               name="categoria"
               value={form.categoria}
               onChange={handleChange}
-              disabled={optionsLoading || saving}
+              disabled={optionsLoading || saving || deleting}
               required
             >
               <option value="">Selecciona una categoría</option>
@@ -122,26 +154,30 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
             </select>
           </label>
 
-          <label>
-            RUT del titular
-            <input
-              name="titularRut"
-              value={form.titularRut}
-              onChange={handleChange}
-              disabled={saving}
-              placeholder="12.345.678-9"
-            />
-          </label>
+          {form.categoria === "DOCUMENTOS_Y_TARJETAS" && (
+            <>
+              <label>
+                RUT del titular
+                <input
+                  name="titularRut"
+                  value={form.titularRut}
+                  onChange={handleChange}
+                  disabled={saving || deleting}
+                  placeholder="xx.xxx.xxx-x"
+                />
+              </label>
 
-          <label>
-            Nombre del titular
-            <input
-              name="titularNombre"
-              value={form.titularNombre}
-              onChange={handleChange}
-              disabled={saving}
-            />
-          </label>
+              <label>
+                Nombre del titular
+                <input
+                  name="titularNombre"
+                  value={form.titularNombre}
+                  onChange={handleChange}
+                  disabled={saving || deleting}
+                />
+              </label>
+            </>
+          )}
 
           <label>
             Descripción
@@ -149,7 +185,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               name="descripcion"
               value={form.descripcion}
               onChange={handleChange}
-              disabled={saving}
+              disabled={saving || deleting}
               required
               minLength={3}
               maxLength={500}
@@ -162,7 +198,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               name="lugarHallazgo"
               value={form.lugarHallazgo}
               onChange={handleChange}
-              disabled={saving}
+              disabled={saving || deleting}
               required
               minLength={3}
               maxLength={200}
@@ -175,7 +211,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               name="puntoId"
               value={form.puntoId}
               onChange={handleChange}
-              disabled={optionsLoading || saving}
+              disabled={optionsLoading || saving || deleting}
               required
             >
               <option value="">Selecciona un punto</option>
@@ -188,19 +224,38 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
           </label>
 
           <div className="object-details-modal__actions">
-            <button type="button" onClick={onClose} disabled={saving}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving || deleting}
+            >
               Cerrar
             </button>
-            <button type="submit" disabled={optionsLoading || saving}>
+            <button
+              type="submit"
+              disabled={optionsLoading || saving || deleting}
+            >
               {saving ? "Guardando..." : "Guardar cambios"}
             </button>
-            {canApprove && (
-              <button type="button" 
-              onClick={handleApprove}
-              className="object-details-modal__approve-button"
-              disabled={saving}>
-                Aprobar
-              </button>
+            {canApproveOrDelete && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleApprove}
+                  className="object-details-modal__approve-button"
+                  disabled={saving || deleting}
+                >
+                  Aprobar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="object-details-modal__delete-button"
+                  disabled={saving || deleting}
+                >
+                  {deleting ? "Eliminando..." : "Eliminar"}
+                </button>
+              </>
             )}
           </div>
         </form>

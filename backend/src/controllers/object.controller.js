@@ -87,7 +87,7 @@ export const getDeliveryPoints = async (req, res) => {
   }
 };
 
-export const editObject = async (req, res) => {
+export const updateObject = async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -197,4 +197,40 @@ export const approveObject = async (req, res) => {
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
-    
+
+export const deletePendingObject = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        error: "Se requiere autenticación para eliminar un objeto",
+      });
+    }
+    const isPointAdmin = req.user.rol === "ADMIN_PUNTO";
+    const isSystemAdmin = req.user.rol === "ADMIN_SISTEMA";
+
+    if (!isSystemAdmin && !isPointAdmin) {
+      return res.status(403).json({ error: "No tienes permiso para realizar esta acción" });
+    }
+
+    const pre = await objectService.getObjectById(req.params.id);
+    if (!pre)
+      return res.status(404).json({ error: "Pre-inscripción no encontrada" });
+    if (pre.estado !== "PENDIENTE") {
+      return res.status(403).json({
+        error: "Solo se pueden eliminar objetos pendientes",
+      });
+    }
+
+    const deleted = await objectService.deleteObject(req.params.id);
+    if (!deleted) {
+      return res.status(409).json({
+        error: "El objeto dejó de estar pendiente y no pudo eliminarse",
+      });
+    }
+
+    return res.status(200).json({ message: "Pre-inscripción eliminada correctamente" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
