@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { prisma } from '../config/db.js'; // Tu instancia de Prisma Client
+import { prisma } from '../config/prisma.js'; 
 import { enviarCorreoVerificacion } from '../utils/mailer.js'; // Ajusta la ruta según la ubicación de tu archivo mailer
 
 export const registrarCuenta = async (req, res, next) => {

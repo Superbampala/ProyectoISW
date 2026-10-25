@@ -15,6 +15,12 @@ import {
   deletePendingObject
 } from "./src/controllers/object.controller.js";
 import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
+import autenticacionRoutes from './src/routes/autenticacion.routes.js';
+import { registrarCuenta, 
+         verificarCorreo, 
+         reenviarCorreoVerificacion 
+        } from './src/controllers/autenticacion.controller.js';
+
 
 
 const __filename = fileURLToPath(import.meta.url);
