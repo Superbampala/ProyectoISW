@@ -90,6 +90,7 @@ export const getAllPendingObjects = () => {
       descripcion: true,
       lugarHallazgo: true,
       fechaRegistro: true,
+      horaLimite: true,
       titularRut: true,
       titularNombre: true,
       bitacora: {
@@ -112,6 +113,7 @@ export const getPendingObjectsByUser = (userId) => {
       descripcion: true,
       lugarHallazgo: true,
       fechaRegistro: true,
+      horaLimite: true,
       titularRut: true,
       titularNombre: true,
       bitacora: {

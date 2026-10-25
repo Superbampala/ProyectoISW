@@ -9,7 +9,7 @@ export default function ObjectsBoard({ onBack = () => {} }) {
 
   //solo de prueba, se debe eliminar cuando se implemente la autenticación
   const user = {
-    rol: "Admin_Punto",
+    rol: "ADMIN_PUNTO",
   };
 
   return (
@@ -18,7 +18,7 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         <button className="board__back" onClick={onBack} aria-label="Volver">
           <BackIcon />
         </button>
-        <h1 className="board__heading">Objetos perdidos</h1>
+        <h1 className="board__heading">Listado de objetos perdidos</h1>
       </header>
 
       <main className="board__content">
