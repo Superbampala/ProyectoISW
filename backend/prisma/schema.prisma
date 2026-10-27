@@ -191,7 +191,7 @@ model Bitacora {
   id            Int                @id @default(autoincrement())
   tipoOperacion TipoOperacion @map("tipo_operacion")
   fechaHora     DateTime           @default(now()) @map("fecha_hora")
-
+  // usuarioID es el responsable de la operacion
   usuarioId Int
   objetoId  Int
 

@@ -1,5 +1,6 @@
 import "./pendingObjectDetailsModal.css";
 import { useState } from "react";
+import ConfirmationDialog from "../../confirmationInput/confirmationInput";
 import {
   useEditObject,
   useObjectOptions,
@@ -45,6 +46,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     error: deleteError,
   } = useDeletePendingObject();
   const [formError, setFormError] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState(null);
   const { approveObject } = useApproveObject();
 
   //solo de prueba, se debe eliminar cuando se implemente la autenticación
@@ -66,9 +68,13 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     setForm((currentForm) => ({ ...currentForm, [name]: value }));
   }
 
-  async function handleApprove() {
+  async function showApproveDialog() {
+    setConfirmationAction("APROBAR");
+  }
+
+  async function confirmApprove() {
     try {
-      await handleSubmit({ preventDefault: () => {} });
+      await saveObject();
       await approveObject(object.id);
       onClose();
     } catch (error) {
@@ -76,7 +82,11 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     }
   }
 
-  async function handleDelete() {
+  async function showDeleteDialog() {
+    setConfirmationAction("ELIMINAR");
+  }
+
+  async function confirmDelete() {
     setFormError(null);
 
     try {
@@ -88,9 +98,13 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     }
   }
 
-  async function handleSubmit(event) {
+  function showSaveDialog(event) {
     // evita que se recarge la pagina
     event.preventDefault();
+    setConfirmationAction("GUARDAR");
+  }
+
+  async function saveObject() {
     // limpia el error del formulario antes de intentar guardar
     setFormError(null);
 
@@ -135,7 +149,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
           <p className="object-details-modal__error">{deleteError}</p>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={showSaveDialog}>
           <label>
             Categoría
             <select
@@ -241,7 +255,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               <>
                 <button
                   type="button"
-                  onClick={handleApprove}
+                  onClick={showApproveDialog}
                   className="object-details-modal__approve-button"
                   disabled={saving || deleting}
                 >
@@ -249,7 +263,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
                 </button>
                 <button
                   type="button"
-                  onClick={handleDelete}
+                  onClick={showDeleteDialog}
                   className="object-details-modal__delete-button"
                   disabled={saving || deleting}
                 >
@@ -259,6 +273,18 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
             )}
           </div>
         </form>
+        {confirmationAction && (
+          <ConfirmationDialog
+            action={confirmationAction}
+            onCancel={() => setConfirmationAction(null)}
+            onConfirm={async () => {
+              setConfirmationAction(null);
+              if (confirmationAction === "GUARDAR") await saveObject();
+              if (confirmationAction === "APROBAR") await confirmApprove();
+              if (confirmationAction === "ELIMINAR") await confirmDelete();
+            }}
+          />
+        )}
       </div>
     </div>
   );

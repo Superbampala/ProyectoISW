@@ -155,7 +155,7 @@ export function useEditObject() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/objetos/${id}`, {
+      const response = await fetch(`${API_URL}/objects/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -196,7 +196,7 @@ export function useObjectOptions() {
 
   const fetchObjectOptions = useCallback(async (signal) => {
     try {
-      const response = await fetch(`${API_URL}/objetos/opciones`, { signal });
+      const response = await fetch(`${API_URL}/objects/options`, { signal });
       if (!response.ok) {
         throw new Error(
           `No se pudieron obtener las opciones de objetos (${response.status})`,
@@ -234,7 +234,7 @@ export function useApproveObject() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/objetos/${id}/aprobar`, {
+      const response = await fetch(`${API_URL}/objects/${id}/approve`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -318,7 +318,7 @@ export function useDeletePendingObject() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/objetos/${id}`, {
+      const response = await fetch(`${API_URL}/objects/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

@@ -14,6 +14,7 @@ import {
   getObjectOptions,
   deletePendingObject
 } from "./src/controllers/object.controller.js";
+import { approveLog, manualRejectLog } from "./src/controllers/log.controller.js";
 import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
 
 
@@ -41,18 +42,21 @@ app.get('/api/health', (req, res) => {
 });
 
 app.patch(
-  '/api/objetos/:id',
+  '/api/objects/:id',
   devAuthMiddleware,
   updateObject
 );
-app.patch("/api/objetos/:id/aprobar", devAuthMiddleware, approveObject);
+app.patch("/api/objects/:id/approve", devAuthMiddleware, approveObject);
+
+app.post("/api/objects/:objetoId/approve", devAuthMiddleware, approveLog);
+app.post("/api/objects/:objetoId/reject", devAuthMiddleware, manualRejectLog);
 
 app.get('/api/objects', getApprovedObjects);
 app.get('/api/objects/pending', devAuthMiddleware, getAllPendingObjects);
 app.get('/api/objects/pending/user', devAuthMiddleware, getPendingObjectsByUser);
-app.get("/api/objetos/opciones", getObjectOptions);
+app.get("/api/objects/options", getObjectOptions);
 
-app.delete("/api/objetos/:id", devAuthMiddleware, deletePendingObject);
+app.delete("/api/objects/:id", devAuthMiddleware, deletePendingObject);
 
 app.use(express.static(frontendPath));
 
