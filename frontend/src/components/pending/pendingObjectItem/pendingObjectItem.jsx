@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./pendingObjectItem.css";
 import ObjectDetailsModal from "../pendingObjectDetailsModal/pendingObjectDetailsModal";
+import ProtectedPhoto from "../../protectedPhoto/protectedPhoto";
 
 function formatCategory(categoria = "") {
   const text = categoria.replaceAll("_", " ").toLowerCase();
@@ -32,7 +33,6 @@ export default function ObjectItem({ obj, onUpdated }) {
   }, []);
 
   const category = formatCategory(obj.categoria);
-  const photo = obj.fotos?.[0]?.urlArchivo;
   const timeLeft = getTimeLeft(obj.horaLimite, now);
 
   function openDetails() {
@@ -50,8 +50,12 @@ export default function ObjectItem({ obj, onUpdated }) {
       onClick={openDetails}
     >
       <div className="card__media">
-        {photo ? (
-          <img src={photo} alt={category} loading="lazy" />
+        {obj.fotos?.[0] ? (
+          <ProtectedPhoto
+            objectId={obj.id}
+            photoId={obj.fotos[0].id}
+            alt={category}
+          />
         ) : (
           <span className="card__placeholder">Sin foto</span>
         )}

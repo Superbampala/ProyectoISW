@@ -4,7 +4,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import objetoRoutes from './src/routes/objeto.routes.js';
+import objectRoutes from './src/routes/objects.routes.js';
 import {
   updateObject,
   getApprovedObjects,
@@ -25,11 +25,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const frontendPath = path.join(__dirname, "../frontend/dist");
 
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "x-user-id", "x-user-role"],
+  }),
+);
 app.use(express.json());
 app.use(morgan("dev"));
 
-app.use('/api/objects', objetoRoutes);
+app.use('/api/objects', objectRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Backend funcionando' });

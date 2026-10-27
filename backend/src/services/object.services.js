@@ -1,4 +1,6 @@
 import prisma from "../config/prisma.js";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 const categorias = [
   "DOCUMENTOS_Y_TARJETAS",
@@ -9,7 +11,7 @@ const categorias = [
   "OTROS",
 ];
 
-export const createObject = async (objectData) => {
+export const createObject = async (objectData, files = []) => {
   const {
     categoria,
     descripcion,
@@ -67,19 +69,53 @@ export const createObject = async (objectData) => {
     data.titularNombre = titularNombre;
   }
 
-  return prisma.objeto.create({
-    data,
-    include: {
-      punto: {
-        select: {
-          id: true,
-          nombre: true,
-          ubicacion: true,
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      const object = await transaction.objeto.create({ data });
+
+      if (files.length > 0) {
+        await transaction.foto.createMany({
+          data: files.map((file) => ({
+            objetoId: object.id,
+            urlArchivo: file.filename,
+          })),
+        });
+      }
+
+      return transaction.objeto.findUnique({
+        where: { id: object.id },
+        include: {
+          punto: {
+            select: {
+              id: true,
+              nombre: true,
+              ubicacion: true,
+            },
+          },
+          fotos: true,
         },
+      });
+    });
+  } catch (error) {
+    await Promise.all(
+      files.map((file) => fs.unlink(file.path).catch(() => undefined)),
+    );
+    throw error;
+  }
+};
+
+export const getObjectPhoto = (photoId) =>
+  prisma.foto.findUnique({
+    where: { id: Number(photoId) },
+    include: {
+      objeto: {
+        select: { usuarioHalladorId: true },
       },
     },
   });
-};
+
+export const deleteObjectPhotoFile = (filename) =>
+  fs.unlink(path.join(process.cwd(), "uploads", "objects", filename));
 
 export const getAllPendingObjects = () => {
   return prisma.objeto.findMany({
@@ -98,7 +134,7 @@ export const getAllPendingObjects = () => {
         orderBy: { fechaHora: "asc" },
       },
       fotos: {
-        select: { urlArchivo: true },
+        select: { id: true, urlArchivo: true },
       },
     },
   });
@@ -121,7 +157,7 @@ export const getPendingObjectsByUser = (userId) => {
         orderBy: { fechaHora: "asc" },
       },
       fotos: {
-        select: { urlArchivo: true },
+        select: { id: true, urlArchivo: true },
       },
     },
   });
