@@ -37,12 +37,13 @@ export const registrarCuenta = async (req, res, next) => {
         passwordHash: passwordHash,
         habilitado: false, // Permanece inactivo hasta verificar correo
         tokenVerificacion,
-        expiracionToken
+        expiracionToken,
+        rol: 'USUARIO_UBB' // Asignar rol por defecto
       }
     });
 
     // Construir el enlace de verificación que se enviará al correo del usuario
-    const enlaceVerificacion = `http://localhost:3000/api/auth/verificar?token=${tokenVerificacion}`;
+    const enlaceVerificacion =`http://localhost:3000/api/autenticacion/verificar?token=${tokenVerificacion}`;
     
     // Aquí llamar a servicio de mailing para enviar enlaceVerificacion
     await enviarCorreoVerificacion(correo, enlaceVerificacion);

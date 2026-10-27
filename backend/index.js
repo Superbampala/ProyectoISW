@@ -35,6 +35,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 app.use('/api/objects', objetoRoutes);
+app.use('/api/autenticacion', autenticacionRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Backend funcionando' });
