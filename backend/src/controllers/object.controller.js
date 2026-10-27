@@ -1,4 +1,6 @@
 import * as objectService from "../services/object.services.js";
+import path from "node:path";
+import { uploadDirectory } from "../middlewares/photo-upload.middleware.js";
 
 export const getObjectOptions = async (req, res) => {
   try {
@@ -57,7 +59,7 @@ export const createObject = async (req, res) => {
     const newObject = await objectService.createObject({
       ...req.body,
       usuarioHalladorId: req.user.id,
-    });
+    }, req.files);
 
     const deadline = new Date(newObject.horaLimite).toLocaleTimeString(
       "es-CL",
@@ -72,8 +74,39 @@ export const createObject = async (req, res) => {
       preInscripcion: newObject,
     });
   } catch (error) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        error: "Cada fotografía debe pesar como máximo 10 MB",
+      });
+    }
+    if (error.code === "LIMIT_UNEXPECTED_FILE") {
+      return res.status(400).json({
+        error: "Solo se permiten hasta 5 fotografías JPEG o PNG",
+      });
+    }
     console.error("Error al crear el objeto:", error);
     res.status(500).json({ error: "Error al crear el objeto" });
+  }
+};
+
+export const getObjectPhoto = async (req, res) => {
+  try {
+    const photo = await objectService.getObjectPhoto(req.params.photoId);
+    if (!photo) return res.status(404).json({ error: "Fotografía no encontrada" });
+    if (photo.objetoId !== Number(req.params.objectId)) {
+      return res.status(404).json({ error: "Fotografía no encontrada" });
+    }
+
+    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
+    const isOwner = req.user?.id === photo.objeto.usuarioHalladorId;
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: "No tienes permiso para ver esta fotografía" });
+    }
+
+    return res.sendFile(path.join(uploadDirectory, photo.urlArchivo));
+  } catch (error) {
+    console.error("Error al obtener la fotografía:", error);
+    return res.status(500).json({ error: "Error al obtener la fotografía" });
   }
 };
 

@@ -75,14 +75,22 @@ export function useCreateObject() {
     setConfirmation(null);
 
     try {
+      const body = new FormData();
+      Object.entries(objectData).forEach(([key, value]) => {
+        if (key === "fotos") {
+          value.forEach((file) => body.append("fotos", file));
+        } else {
+          body.append(key, value);
+        }
+      });
+
       const response = await fetch(`${API_URL}/objects`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "x-user-id": "1",
           "x-user-role": "USUARIO_UBB",
         },
-        body: JSON.stringify(objectData),
+        body,
       });
       const data = await response.json();
       // Manejo de errores de validación de campos, todos los errores de validación se envían en un objeto con la propiedad "detalles"
