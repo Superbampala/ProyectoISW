@@ -10,6 +10,7 @@ import {
 export default function MainMenu({
   onViewApprovedObjects = () => {},
   onViewPendingObjects = () => {},
+  onRegisterObject = () => {},
 }) {
   // Solo de prueba, se debe reemplazar cuando se implemente la autenticación.
   const user = {
@@ -60,7 +61,12 @@ export default function MainMenu({
           </button>
         </div>
 
-        <button className="menu__create" type="button" aria-label="Crear nuevo objeto perdido">
+        <button
+          className="menu__create"
+          type="button"
+          onClick={onRegisterObject}
+          aria-label="Encontré un objeto"
+        >
           <PlusIcon />
         </button>
       </main>

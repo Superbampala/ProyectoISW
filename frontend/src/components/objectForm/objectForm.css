@@ -64,6 +64,12 @@
   border-radius: 8px;
 }
 
+.object-form__field-error {
+  color: #a61b1b;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
 .object-form__error {
   background: #ffebee;
   color: #a61b1b;
