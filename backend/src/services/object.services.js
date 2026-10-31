@@ -11,6 +11,19 @@ const categorias = [
   "OTROS",
 ];
 
+const DAILY_REGISTRATION_LIMIT = 4;
+const DAILY_REGISTRATION_ROLE = "USUARIO_UBB";
+
+export class DailyRegistrationLimitError extends Error {
+  constructor() {
+    super(
+      "Has alcanzado el límite diario de 4 preinscripciones. Intenta nuevamente mañana.",
+    );
+    this.name = "DailyRegistrationLimitError";
+    this.statusCode = 429;
+  }
+}
+
 export const createObject = async (objectData, files = []) => {
   const {
     categoria,
@@ -71,6 +84,24 @@ export const createObject = async (objectData, files = []) => {
 
   try {
     return await prisma.$transaction(async (transaction) => {
+      if (objectData.usuarioRol === DAILY_REGISTRATION_ROLE) {
+        await transaction.$queryRaw`
+          SELECT pg_advisory_xact_lock(${Number(usuarioHalladorId)})
+        `;
+
+        const [dailyCount] = await transaction.$queryRaw`
+          SELECT COUNT(*)::int AS count
+          FROM "registros_preinscripcion"
+          WHERE "usuario_id" = ${Number(usuarioHalladorId)}
+            AND ("fecha_registro" AT TIME ZONE 'America/Santiago')::date =
+              (CURRENT_TIMESTAMP AT TIME ZONE 'America/Santiago')::date
+        `;
+
+        if (dailyCount.count >= DAILY_REGISTRATION_LIMIT) {
+          throw new DailyRegistrationLimitError();
+        }
+      }
+
       const object = await transaction.objeto.create({ data });
 
       if (files.length > 0) {
@@ -81,6 +112,13 @@ export const createObject = async (objectData, files = []) => {
           })),
         });
       }
+
+      await transaction.registroPreinscripcion.create({
+        data: {
+          usuarioId: Number(usuarioHalladorId),
+          objetoId: object.id,
+        },
+      });
 
       return transaction.objeto.findUnique({
         where: { id: object.id },

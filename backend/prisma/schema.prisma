@@ -50,7 +50,8 @@ model Usuario {
   expiracionToken   DateTime? @map("expiracion_token")
 
   // Registra: un usuario halla/registra 0..N objetos; cada objeto tiene 1 hallador
-  objetosRegistrados Objeto[] @relation("Hallador")
+  objetosRegistrados Objeto[]                 @relation("Hallador")
+  registrosDiarios   RegistroPreinscripcion[]
 
   // AdministradorQueEntrega: un usuario(admin) procesa 0..N retiros; cada retiro tiene 1 admin
   retirosProcesados Retiro[] @relation("AdminEntrega")
@@ -101,7 +102,8 @@ model Objeto {
   fotos Foto[]
 
   // Tiene: 1..N eventos de bitácora
-  bitacora Bitacora[]
+  bitacora                Bitacora[]
+  registrosPreinscripcion RegistroPreinscripcion[]
 
   @@index([estado])
   @@index([categoria])
@@ -188,12 +190,12 @@ enum TipoOperacion {
 }
 
 model Bitacora {
-  id            Int                @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   tipoOperacion TipoOperacion @map("tipo_operacion")
-  fechaHora     DateTime           @default(now()) @map("fecha_hora")
+  fechaHora     DateTime      @default(now()) @map("fecha_hora")
   // usuarioID es el responsable de la operacion
-  usuarioId Int
-  objetoId  Int
+  usuarioId     Int
+  objetoId      Int
 
   usuario Usuario @relation(fields: [usuarioId], references: [id])
   objeto  Objeto  @relation(fields: [objetoId], references: [id], onDelete: Cascade)
@@ -208,4 +210,17 @@ model ConfiguracionHora {
   actualizadoPorId Int      @map("actualizado_por_id")
 
   actualizadoPor Usuario @relation("AdministradorSistema", fields: [actualizadoPorId], references: [id])
+}
+
+model RegistroPreinscripcion {
+  id            Int      @id @default(autoincrement())
+  usuarioId     Int      @map("usuario_id")
+  objetoId      Int?     @map("objeto_id")
+  fechaRegistro DateTime @default(now()) @map("fecha_registro")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  objeto  Objeto? @relation(fields: [objetoId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId, fechaRegistro])
+  @@map("registros_preinscripcion")
 }

@@ -59,6 +59,7 @@ export const createObject = async (req, res) => {
     const newObject = await objectService.createObject({
       ...req.body,
       usuarioHalladorId: req.user.id,
+      usuarioRol: req.user.rol,
     }, req.files);
 
     const deadline = new Date(newObject.horaLimite).toLocaleTimeString(
@@ -74,6 +75,9 @@ export const createObject = async (req, res) => {
       preInscripcion: newObject,
     });
   } catch (error) {
+    if (error.statusCode === 429) {
+      return res.status(429).json({ error: error.message });
+    }
     if (error.code === "LIMIT_FILE_SIZE") {
       return res.status(400).json({
         error: "Cada fotografía debe pesar como máximo 10 MB",
