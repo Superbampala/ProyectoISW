@@ -3,18 +3,25 @@ import { API_URL } from "../api/config";
 
 export function usePendingObjects(userRole = "ADMIN_PUNTO") {
   const [objects, setObjects] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 6,
+    total: 0,
+    totalPages: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const isUserScope = userRole === "USUARIO_UBB";
 
   const fetchPendingObjects = useCallback(
-    async (signal) => {
+    async (signal, page = 1) => {
       setLoading(true);
       setError(null);
 
-      const endpoint = isUserScope
+      const baseEndpoint = isUserScope
         ? "/objects/pending/user"
         : "/objects/pending";
+      const endpoint = `${baseEndpoint}?page=${page}&limit=6`;
       try {
         const response = await fetch(`${API_URL}${endpoint}`, {
           signal,
@@ -33,7 +40,8 @@ export function usePendingObjects(userRole = "ADMIN_PUNTO") {
         }
 
         const data = await response.json();
-        setObjects(data);
+        setObjects(data.items);
+        setPagination(data);
       } catch (requestError) {
         if (requestError.name !== "AbortError") {
           setError(requestError.message);
@@ -47,18 +55,31 @@ export function usePendingObjects(userRole = "ADMIN_PUNTO") {
 
   useEffect(() => {
     const controller = new AbortController();
-    // La petición sincroniza el listado con la API al montar el componente.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPendingObjects(controller.signal);
     return () => controller.abort();
   }, [fetchPendingObjects]);
 
   const refetch = useCallback(
-    () => fetchPendingObjects(),
+    (page = pagination.page) => fetchPendingObjects(undefined, page),
+    // Mantiene la página actual al volver a cargar los objetos.
+    // Recrea refetch cuando cambia la página actual.
+    [fetchPendingObjects, pagination.page],
+  );
+
+  const goToPage = useCallback(
+    (page) => fetchPendingObjects(undefined, page),
     [fetchPendingObjects],
   );
 
-  return { objects, loading, error, refetch, isUserScope };
+  return {
+    objects,
+    loading,
+    error,
+    refetch,
+    goToPage,
+    pagination,
+    isUserScope,
+  };
 }
 
 

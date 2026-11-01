@@ -117,53 +117,58 @@ export const getObjectPhoto = (photoId) =>
 export const deleteObjectPhotoFile = (filename) =>
   fs.unlink(path.join(process.cwd(), "uploads", "objects", filename));
 
-export const getAllPendingObjects = () => {
-  return prisma.objeto.findMany({
-    where: { estado: "PENDIENTE" },
-    select: {
-      id: true,
-      categoria: true,
-      descripcion: true,
-      lugarHallazgo: true,
-      puntoId: true,
-      fechaRegistro: true,
-      horaLimite: true,
-      titularRut: true,
-      titularNombre: true,
-      bitacora: {
-        select: { fechaHora: true },
-        orderBy: { fechaHora: "asc" },
-      },
-      fotos: {
-        select: { id: true, urlArchivo: true },
-      },
-    },
-  });
+const pendingObjectSelect = {
+  id: true,
+  categoria: true,
+  descripcion: true,
+  lugarHallazgo: true,
+  puntoId: true,
+  fechaRegistro: true,
+  horaLimite: true,
+  titularRut: true,
+  titularNombre: true,
+  bitacora: {
+    select: { fechaHora: true },
+    orderBy: { fechaHora: "asc" },
+  },
+  fotos: {
+    select: { id: true, urlArchivo: true },
+  },
 };
 
-export const getPendingObjectsByUser = (userId) => {
-  return prisma.objeto.findMany({
-    where: { estado: "PENDIENTE", usuarioHalladorId: Number(userId) },
-    select: {
-      id: true,
-      categoria: true,
-      descripcion: true,
-      lugarHallazgo: true,
-      puntoId: true,
-      fechaRegistro: true,
-      horaLimite: true,
-      titularRut: true,
-      titularNombre: true,
-      bitacora: {
-        select: { fechaHora: true },
-        orderBy: { fechaHora: "asc" },
-      },
-      fotos: {
-        select: { id: true, urlArchivo: true },
-      },
-    },
-  });
-}
+const getPendingObjectsPage = async (where, page = 1, limit = 6) => {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
+  const skip = (safePage - 1) * safeLimit;
+
+  const [objects, total] = await prisma.$transaction([
+    prisma.objeto.findMany({
+      where:where,
+      select: pendingObjectSelect,
+      orderBy: { fechaRegistro: "desc" },
+      skip:skip,
+      take: safeLimit,
+    }),
+    prisma.objeto.count({ where }),
+  ]);
+
+  return {
+    items: objects,
+    page: safePage,
+    pageSize: safeLimit,
+    total,
+    totalPages: Math.ceil(total / safeLimit),
+  };
+};
+
+export const getAllPendingObjects = (page, limit) =>
+  getPendingObjectsPage({ estado: "PENDIENTE" }, page, limit);
+
+export const getPendingObjectsByUser = (userId, page, limit) =>
+  getPendingObjectsPage({
+    estado: "PENDIENTE",
+    usuarioHalladorId: Number(userId),
+  }, page, limit);
 
 export const getApprovedObjects = () => {
   return prisma.objeto.findMany({

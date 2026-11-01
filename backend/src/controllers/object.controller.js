@@ -20,7 +20,10 @@ export const getAllPendingObjects = async (req, res) => {
       });
     }
 
-    const pendingObjects = await objectService.getAllPendingObjects();
+    const pendingObjects = await objectService.getAllPendingObjects(
+      req.query.page,
+      req.query.limit,
+    );
     res.status(200).json(pendingObjects);
   } catch (error) {
     console.error("Error al obtener los objetos pendientes:", error);
@@ -36,7 +39,11 @@ export const getPendingObjectsByUser = async (req, res) => {
       });
     }
 
-    const pendingObjects = await objectService.getPendingObjectsByUser(req.user.id);
+    const pendingObjects = await objectService.getPendingObjectsByUser(
+      req.user.id,
+      req.query.page,
+      req.query.limit,
+    );
     res.status(200).json(pendingObjects);
   } catch (error) {
     console.error("Error al obtener los objetos pendientes del usuario:", error);
