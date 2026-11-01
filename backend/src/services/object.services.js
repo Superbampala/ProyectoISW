@@ -170,17 +170,37 @@ export const getPendingObjectsByUser = (userId, page, limit) =>
     usuarioHalladorId: Number(userId),
   }, page, limit);
 
-export const getApprovedObjects = () => {
-  return prisma.objeto.findMany({
-    where: { estado: "APROBADO" },
-    select: {
-      id: true,
-      categoria: true,
-      descripcion: true,
-      lugarHallazgo: true,
-      fechaRegistro: true,
-    },
-  });
+export const getApprovedObjects = async (page = 1, limit = 6) => {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
+  const skip = (safePage - 1) * safeLimit;
+  const where = { estado: "APROBADO" };
+  const select = {
+    id: true,
+    categoria: true,
+    descripcion: true,
+    lugarHallazgo: true,
+    fechaRegistro: true,
+  };
+
+  const [objects, total] = await prisma.$transaction([
+    prisma.objeto.findMany({
+      where,
+      select,
+      orderBy: { fechaRegistro: "desc" },
+      skip,
+      take: safeLimit,
+    }),
+    prisma.objeto.count({ where }),
+  ]);
+
+  return {
+    items: objects,
+    page: safePage,
+    pageSize: safeLimit,
+    total,
+    totalPages: Math.ceil(total / safeLimit),
+  };
 };
 
 export const getDeliveryPoints = () => {

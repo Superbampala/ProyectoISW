@@ -53,7 +53,10 @@ export const getPendingObjectsByUser = async (req, res) => {
 
 export const getApprovedObjects = async (req, res) => {
   try {
-    const approvedObjects = await objectService.getApprovedObjects();
+    const approvedObjects = await objectService.getApprovedObjects(
+      req.query.page,
+      req.query.limit,
+    );
     res.status(200).json(approvedObjects);
   } catch (error) {
     console.error("Error al obtener los objetos aprobados:", error);
