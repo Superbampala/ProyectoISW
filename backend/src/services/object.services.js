@@ -125,6 +125,7 @@ export const getAllPendingObjects = () => {
       categoria: true,
       descripcion: true,
       lugarHallazgo: true,
+      puntoId: true,
       fechaRegistro: true,
       horaLimite: true,
       titularRut: true,
@@ -148,6 +149,7 @@ export const getPendingObjectsByUser = (userId) => {
       categoria: true,
       descripcion: true,
       lugarHallazgo: true,
+      puntoId: true,
       fechaRegistro: true,
       horaLimite: true,
       titularRut: true,
@@ -204,15 +206,76 @@ export const updateObject = (id, data) => {
   });
 };
 
-export const approveObject = (id) => {
-  return prisma.objeto.update({
-    where: { id: Number(id) },
-    data: { estado: "APROBADO" },
-  });
-}
+export const approveObject = async (id, usuarioId) => {
+  const objetoId = Number(id);
 
-export const deleteObject = (id) => {
-  return prisma.objeto.delete({
-    where: { id: Number(id) },
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.objeto.updateMany({
+      where: {
+        id: objetoId,
+        estado: "PENDIENTE",
+      },
+      data: { estado: "APROBADO" },
+    });
+
+    if (updated.count !== 1) {
+      const error = new Error(
+        "El objeto no existe o ya no está pendiente",
+      );
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const log = await tx.bitacora.create({
+      data: {
+        objetoId,
+        objetoIdHistorico: objetoId,
+        usuarioId: Number(usuarioId),
+        tipoOperacion: "APROBACION",
+      },
+    });
+
+    return {
+      objeto: await tx.objeto.findUnique({ where: { id: objetoId } }),
+      bitacora: log,
+    };
+  });
+};
+
+export const deleteObject = async (id, usuarioId) => {
+  const objetoId = Number(id);
+
+  return prisma.$transaction(async (tx) => {
+    const objeto = await tx.objeto.findUnique({
+      where: { id: objetoId },
+      select: { estado: true },
+    });
+
+    if (!objeto) {
+      const error = new Error("Pre-inscripción no encontrada");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (objeto.estado !== "PENDIENTE") {
+      const error = new Error("Solo se pueden eliminar objetos pendientes");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    await tx.bitacora.create({
+      data: {
+        objetoId,
+        objetoIdHistorico: objetoId,
+        usuarioId: Number(usuarioId),
+        tipoOperacion: "ELIMINACION_MANUAL",
+      },
+    });
+
+    await tx.objeto.delete({
+      where: { id: objetoId },
+    });
+
+    return { objetoId };
   });
 };

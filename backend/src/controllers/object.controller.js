@@ -220,13 +220,19 @@ export const approveObject = async (req, res) => {
       return res.status(403).json({ error });
     }
 
-    const updated = await objectService.approveObject(req.params.id);
+    const updated = await objectService.approveObject(
+      req.params.id,
+      req.user.id,
+    );
 
     return res.status(200).json(updated);
 
 
   }catch (err) {
     console.error(err);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
@@ -254,16 +260,14 @@ export const deletePendingObject = async (req, res) => {
       });
     }
 
-    const deleted = await objectService.deleteObject(req.params.id);
-    if (!deleted) {
-      return res.status(409).json({
-        error: "El objeto dejó de estar pendiente y no pudo eliminarse",
-      });
-    }
+    await objectService.deleteObject(req.params.id, req.user.id);
 
     return res.status(200).json({ message: "Pre-inscripción eliminada correctamente" });
   } catch (err) {
     console.error(err);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };

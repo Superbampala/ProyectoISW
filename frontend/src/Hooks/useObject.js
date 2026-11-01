@@ -21,7 +21,7 @@ export function usePendingObjects(userRole = "ADMIN_PUNTO") {
           headers: {
             // Temporal para dev-auth; se reemplazará al conectar la autenticación real.
             // Temporal para probar con un usuario UBB que tiene objetos pendientes.
-            "x-user-id": isUserScope ? "11" : "2",
+            "x-user-id": isUserScope ? "11" : "9",
             "x-user-role": isUserScope ? "USUARIO_UBB" : "ADMIN_PUNTO",
           },
         });
@@ -159,7 +159,7 @@ export function useEditObject() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "2",
+          "x-user-id": "9",
           "x-user-role": "ADMIN_PUNTO",
         },
         body: JSON.stringify(updatedData),
@@ -238,7 +238,7 @@ export function useApproveObject() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "2",
+          "x-user-id": "9",
           "x-user-role": "ADMIN_PUNTO",
         },
       });
@@ -322,7 +322,7 @@ export function useDeletePendingObject() {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "2",
+          "x-user-id": "9",
           "x-user-role": "ADMIN_PUNTO",
         },
       });

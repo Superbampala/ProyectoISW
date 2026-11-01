@@ -193,10 +193,11 @@ model Bitacora {
   fechaHora     DateTime           @default(now()) @map("fecha_hora")
   // usuarioID es el responsable de la operacion
   usuarioId Int
-  objetoId  Int
+  objetoId          Int?
+  objetoIdHistorico Int   @map("objeto_id_historico")
 
   usuario Usuario @relation(fields: [usuarioId], references: [id])
-  objeto  Objeto  @relation(fields: [objetoId], references: [id], onDelete: Cascade)
+  objeto  Objeto? @relation(fields: [objetoId], references: [id], onDelete: SetNull)
 
   @@map("bitacora")
 }
