@@ -10,7 +10,7 @@ export default function ProtectedPhoto({ objectId, photoId, alt }) {
     fetch(`${API_URL}/objects/${objectId}/photos/${photoId}`, {
       signal: controller.signal,
       headers: {
-        "x-user-id": "2",
+        "x-user-id": "1",
         "x-user-role": "ADMIN_PUNTO",
       },
     })

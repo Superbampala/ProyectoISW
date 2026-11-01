@@ -117,63 +117,90 @@ export const getObjectPhoto = (photoId) =>
 export const deleteObjectPhotoFile = (filename) =>
   fs.unlink(path.join(process.cwd(), "uploads", "objects", filename));
 
-export const getAllPendingObjects = () => {
-  return prisma.objeto.findMany({
-    where: { estado: "PENDIENTE" },
-    select: {
-      id: true,
-      categoria: true,
-      descripcion: true,
-      lugarHallazgo: true,
-      fechaRegistro: true,
-      horaLimite: true,
-      titularRut: true,
-      titularNombre: true,
-      bitacora: {
-        select: { fechaHora: true },
-        orderBy: { fechaHora: "asc" },
-      },
-      fotos: {
-        select: { id: true, urlArchivo: true },
-      },
-    },
-  });
+const pendingObjectSelect = {
+  id: true,
+  categoria: true,
+  descripcion: true,
+  lugarHallazgo: true,
+  puntoId: true,
+  fechaRegistro: true,
+  horaLimite: true,
+  titularRut: true,
+  titularNombre: true,
+  bitacora: {
+    select: { fechaHora: true },
+    orderBy: { fechaHora: "asc" },
+  },
+  fotos: {
+    select: { id: true, urlArchivo: true },
+  },
 };
 
-export const getPendingObjectsByUser = (userId) => {
-  return prisma.objeto.findMany({
-    where: { estado: "PENDIENTE", usuarioHalladorId: Number(userId) },
-    select: {
-      id: true,
-      categoria: true,
-      descripcion: true,
-      lugarHallazgo: true,
-      fechaRegistro: true,
-      horaLimite: true,
-      titularRut: true,
-      titularNombre: true,
-      bitacora: {
-        select: { fechaHora: true },
-        orderBy: { fechaHora: "asc" },
-      },
-      fotos: {
-        select: { id: true, urlArchivo: true },
-      },
-    },
-  });
-}
+const getPendingObjectsPage = async (where, page = 1, limit = 6) => {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
+  const skip = (safePage - 1) * safeLimit;
 
-export const getApprovedObjects = () => {
-  return prisma.objeto.findMany({
-    where: { estado: "APROBADO" },
-    select: {
-      id: true,
-      categoria: true,
-      descripcion: true,
-      lugarHallazgo: true,
-      fechaRegistro: true,
-    },
-  });
+  const [objects, total] = await prisma.$transaction([
+    prisma.objeto.findMany({
+      where:where,
+      select: pendingObjectSelect,
+      orderBy: { fechaRegistro: "desc" },
+      skip:skip,
+      take: safeLimit,
+    }),
+    prisma.objeto.count({ where }),
+  ]);
+
+  return {
+    items: objects,
+    page: safePage,
+    pageSize: safeLimit,
+    total,
+    totalPages: Math.ceil(total / safeLimit),
+  };
+};
+
+export const getAllPendingObjects = (page, limit) =>
+  getPendingObjectsPage({ estado: "PENDIENTE" }, page, limit);
+
+export const getPendingObjectsByUser = (userId, page, limit) =>
+  getPendingObjectsPage({
+    estado: "PENDIENTE",
+    usuarioHalladorId: Number(userId),
+  }, page, limit);
+
+export const getApprovedObjects = async (page = 1, limit = 6) => {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
+  const skip = (safePage - 1) * safeLimit;
+  const where = { estado: "APROBADO" };
+  const select = {
+    id: true,
+    categoria: true,
+    descripcion: true,
+    lugarHallazgo: true,
+    fechaRegistro: true,
+  };
+
+  const [objects, total] = await prisma.$transaction([
+    prisma.objeto.findMany({
+      where,
+      select,
+      orderBy: { fechaRegistro: "desc" },
+      skip,
+      take: safeLimit,
+    }),
+    prisma.objeto.count({ where }),
+  ]);
+
+  return {
+    items: objects,
+    page: safePage,
+    pageSize: safeLimit,
+    total,
+    totalPages: Math.ceil(total / safeLimit),
+  };
 };
 
 export const getDeliveryPoints = () => {
@@ -204,15 +231,76 @@ export const updateObject = (id, data) => {
   });
 };
 
-export const approveObject = (id) => {
-  return prisma.objeto.update({
-    where: { id: Number(id) },
-    data: { estado: "APROBADO" },
-  });
-}
+export const approveObject = async (id, usuarioId) => {
+  const objetoId = Number(id);
 
-export const deleteObject = (id) => {
-  return prisma.objeto.delete({
-    where: { id: Number(id) },
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.objeto.updateMany({
+      where: {
+        id: objetoId,
+        estado: "PENDIENTE",
+      },
+      data: { estado: "APROBADO" },
+    });
+
+    if (updated.count !== 1) {
+      const error = new Error(
+        "El objeto no existe o ya no está pendiente",
+      );
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const log = await tx.bitacora.create({
+      data: {
+        objetoId,
+        objetoIdHistorico: objetoId,
+        usuarioId: Number(usuarioId),
+        tipoOperacion: "APROBACION",
+      },
+    });
+
+    return {
+      objeto: await tx.objeto.findUnique({ where: { id: objetoId } }),
+      bitacora: log,
+    };
+  });
+};
+
+export const deleteObject = async (id, usuarioId) => {
+  const objetoId = Number(id);
+
+  return prisma.$transaction(async (tx) => {
+    const objeto = await tx.objeto.findUnique({
+      where: { id: objetoId },
+      select: { estado: true },
+    });
+
+    if (!objeto) {
+      const error = new Error("Pre-inscripción no encontrada");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (objeto.estado !== "PENDIENTE") {
+      const error = new Error("Solo se pueden eliminar objetos pendientes");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    await tx.bitacora.create({
+      data: {
+        objetoId,
+        objetoIdHistorico: objetoId,
+        usuarioId: Number(usuarioId),
+        tipoOperacion: "ELIMINACION_MANUAL",
+      },
+    });
+
+    await tx.objeto.delete({
+      where: { id: objetoId },
+    });
+
+    return { objetoId };
   });
 };

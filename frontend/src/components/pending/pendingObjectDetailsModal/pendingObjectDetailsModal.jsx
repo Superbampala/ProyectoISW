@@ -76,6 +76,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     try {
       await saveObject();
       await approveObject(object.id);
+      onSaved?.();
       onClose();
     } catch (error) {
       setFormError(error.message);
