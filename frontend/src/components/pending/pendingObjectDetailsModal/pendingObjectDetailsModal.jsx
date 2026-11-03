@@ -7,6 +7,7 @@ import {
   useApproveObject,
   useDeletePendingObject,
 } from "../../../Hooks/useObject";
+import ProtectedPhoto from "../../protectedPhoto/protectedPhoto";
 
 const allowedFields = [
   "categoria",
@@ -136,6 +137,26 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
       >
         <h2>Detalles del objeto</h2>
         <p>ID del objeto: {object.id}</p>
+
+        <section className="object-details-modal__photos" aria-label="Fotografías del objeto">
+          <h3>Fotografías</h3>
+          {object.fotos?.length ? (
+            <div className="object-details-modal__photo-grid">
+              {object.fotos.map((photo) => (
+                <ProtectedPhoto
+                  key={photo.id}
+                  objectId={object.id}
+                  photoId={photo.id}
+                  alt={`Fotografía de ${formatCategory(object.categoria)}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="object-details-modal__no-photos">
+              Este objeto no tiene fotografías.
+            </p>
+          )}
+        </section>
 
         {optionsError && (
           <p className="object-details-modal__error">{optionsError}</p>
