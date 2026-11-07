@@ -1,5 +1,6 @@
 import "./adminObjectDetailsModal.css";
 import { useState } from "react";
+import ConfirmationDialog from "../../../confirmationInput/confirmationInput";
 import { useEditObject, useObjectOptions } from "../../../../Hooks/useObject";
 
 const allowedFields = [
@@ -32,6 +33,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     useObjectOptions();
   const { editObject, loading: saving, error: saveError } = useEditObject();
   const [formError, setFormError] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState(false);
 
   function handleBackdropClick(event) {
     event.stopPropagation();
@@ -44,9 +46,13 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
     setForm((currentForm) => ({ ...currentForm, [name]: value }));
   }
 
-  async function handleSubmit(event) {
+  async function showConfirmationDialog(event) {
     // evita que se recarge la pagina
     event.preventDefault();
+    setConfirmationAction(true);
+  }
+
+  async function saveObject() {
     // limpia el error del formulario antes de intentar guardar
     setFormError(null);
 
@@ -84,7 +90,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
           <p className="object-details-modal__error">{saveError}</p>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={showConfirmationDialog}>
           <label>
             Categoría
             <select
@@ -181,6 +187,16 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
             </button>
           </div>
         </form>
+        {confirmationAction && (
+          <ConfirmationDialog
+            action="GUARDAR"
+            onCancel={() => setConfirmationAction(false)}
+            onConfirm={async () => {
+              setConfirmationAction(false);
+              await saveObject();
+            }}
+          />
+        )}
       </div>
     </div>
   );

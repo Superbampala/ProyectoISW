@@ -5,7 +5,8 @@ import AdminObjectItem from "../admin/adminObjectItem/adminObjectItem";
 import { BackIcon } from "../../icons/icons";
 
 export default function ObjectsBoard({ onBack = () => {} }) {
-  const { objects, loading, error, refetch } = useGetApprovedObjects();
+  const { objects, loading, error, refetch, goToPage, pagination } =
+    useGetApprovedObjects();
 
   //solo de prueba, se debe eliminar cuando se implemente la autenticación
   const user = {
@@ -38,15 +39,39 @@ export default function ObjectsBoard({ onBack = () => {} }) {
         )}
 
         {!loading && !error && objects.length > 0 && (
-          <ul className="board__grid">
-            {objects.map((obj) => (
-              user.rol === "USUARIO_UBB" ? (
-                <UserObjectItem key={obj.id} obj={obj} />
-              ) : (
-                <AdminObjectItem key={obj.id} obj={obj} />
-              )
-            ))}
-          </ul>
+          <>
+            <ul className="board__grid">
+              {objects.map((obj) => (
+                user.rol === "USUARIO_UBB" ? (
+                  <UserObjectItem key={obj.id} obj={obj} />
+                ) : (
+                  <AdminObjectItem key={obj.id} obj={obj} />
+                )
+              ))}
+            </ul>
+            <nav
+              className="board__pagination"
+              aria-label="Paginación de objetos aprobados"
+            >
+              <button
+                className="board__button"
+                onClick={() => goToPage(pagination.page - 1)}
+                disabled={loading || pagination.page <= 1}
+              >
+                Anterior
+              </button>
+              <span>
+                Página {pagination.page} de {pagination.totalPages}
+              </span>
+              <button
+                className="board__button"
+                onClick={() => goToPage(pagination.page + 1)}
+                disabled={loading || pagination.page >= pagination.totalPages}
+              >
+                Siguiente
+              </button>
+            </nav>
+          </>
         )}
       </main>
     </div>

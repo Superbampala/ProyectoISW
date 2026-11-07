@@ -20,7 +20,7 @@ const estadosValidos = [
 ];
 
 /**
- * 1. Esquema para CREAR un Objeto (POST /api/objetos)
+ * 1. Esquema para CREAR un Objeto (POST /api/objects)
  */
 export const crearObjetoSchema = z.object({
   body: z
@@ -77,7 +77,7 @@ export const crearObjetoSchema = z.object({
 });
 
 /**
- * 2. Esquema para ACTUALIZAR un Objeto (PATCH /api/objetos/:id)
+ * 2. Esquema para ACTUALIZAR un Objeto (PATCH /api/objects/:id)
  */
 export const actualizarObjetoSchema = z.object({
   params: z.object({
@@ -102,7 +102,7 @@ export const actualizarObjetoSchema = z.object({
 });
 
 /**
- * 3. Esquema para validar ID por parámetro de URL (GET / DELETE /api/objetos/:id)
+ * 3. Esquema para validar ID por parámetro de URL (GET / DELETE /api/objects/:id)
  */
 export const objetoIdParamSchema = z.object({
   params: z.object({
@@ -114,7 +114,7 @@ export const objetoIdParamSchema = z.object({
 });
 
 /**
- * 4. Esquema para BÚSQUEDA, FILTRADO Y PAGINACIÓN (GET /api/objetos)
+ * 4. Esquema para BÚSQUEDA, FILTRADO Y PAGINACIÓN (GET /api/objects)
  * Aprovecha los índices definidos en Prisma: @@index([estado]), @@index([categoria]), @@index([puntoId])
  */
 export const consultarObjetosQuerySchema = z.object({

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCreateObject, useDeliveryPoints } from "../../Hooks/useObject";
 import "./objectForm.css";
 import { BackIcon } from "../icons/icons";
@@ -12,6 +12,31 @@ const categories = [
   ["OTROS", "Otros"],
 ];
 
+const draftStorageKey = "object-form-draft";
+
+function getInitialForm() {
+  const defaultForm = {
+    categoria: "",
+    descripcion: "",
+    lugarHallazgo: "",
+    puntoId: "",
+    titularRut: "",
+    titularNombre: "",
+    fotos: [],
+  };
+
+  if (typeof window === "undefined") return defaultForm;
+
+  try {
+    const savedDraft = JSON.parse(
+      sessionStorage.getItem(draftStorageKey) || "null",
+    );
+    return savedDraft ? { ...defaultForm, ...savedDraft, fotos: [] } : defaultForm;
+  } catch {
+    return defaultForm;
+  }
+}
+
 export default function ObjectForm({ onBack = () => {} }) {
   const { points, loading: pointsLoading, error: pointsError } = useDeliveryPoints();
   const {
@@ -22,14 +47,19 @@ export default function ObjectForm({ onBack = () => {} }) {
     confirmation,
   } = useCreateObject();
   const [localErrors, setLocalErrors] = useState({});
-  const [form, setForm] = useState({
-    categoria: "",
-    descripcion: "",
-    lugarHallazgo: "",
-    puntoId: "",
-    titularRut: "",
-    titularNombre: "",
-  });
+  const [form, setForm] = useState(getInitialForm);
+  const photoInputRef = useRef(null);
+
+  useEffect(() => {
+    const draft = { ...form };
+    delete draft.fotos;
+    sessionStorage.setItem(draftStorageKey, JSON.stringify(draft));
+  }, [form]);
+
+  const handleBack = () => {
+    sessionStorage.removeItem(draftStorageKey);
+    onBack();
+  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -38,6 +68,35 @@ export default function ObjectForm({ onBack = () => {} }) {
     setLocalErrors((current) => {
       const next = { ...current };
       delete next[name];
+      return next;
+    });
+  };
+
+  const handlePhotosChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    const invalidType = files.some(
+      (file) => !["image/jpeg", "image/png"].includes(file.type),
+    );
+    const oversized = files.some((file) => file.size > 10 * 1024 * 1024);
+    const tooMany = files.length > 5;
+
+    if (invalidType || oversized || tooMany) {
+      setLocalErrors((current) => ({
+        ...current,
+        fotos: tooMany
+          ? "Puedes seleccionar como máximo 5 fotografías"
+          : invalidType
+            ? "Solo se permiten fotografías JPG o PNG"
+            : "Cada fotografía debe pesar como máximo 10 MB",
+      }));
+      event.target.value = "";
+      return;
+    }
+
+    setForm((current) => ({ ...current, fotos: files }));
+    setLocalErrors((current) => {
+      const next = { ...current };
+      delete next.fotos;
       return next;
     });
   };
@@ -84,7 +143,9 @@ export default function ObjectForm({ onBack = () => {} }) {
     if (Object.keys(validationErrors).length > 0) return;
 
     try {
-      await createObject(objectData);
+      await createObject({ ...objectData, fotos: form.fotos });
+      sessionStorage.removeItem(draftStorageKey);
+      if (photoInputRef.current) photoInputRef.current.value = "";
       setForm({
         categoria: "",
         descripcion: "",
@@ -92,6 +153,7 @@ export default function ObjectForm({ onBack = () => {} }) {
         puntoId: "",
         titularRut: "",
         titularNombre: "",
+        fotos: [],
       });
     } catch {
       // El hook expone el error para mostrarlo en el formulario.
@@ -101,7 +163,7 @@ export default function ObjectForm({ onBack = () => {} }) {
   return (
     <div className="object-form">
       <header className="board__header">
-        <button className="board__back" onClick={onBack} aria-label="Volver">
+        <button className="board__back" onClick={handleBack} aria-label="Volver">
           <BackIcon />
         </button>
         <h1 className="board__heading">Encontré un objeto</h1>
@@ -176,6 +238,25 @@ export default function ObjectForm({ onBack = () => {} }) {
               placeholder="¿Dónde lo encontraste?"
             />
             {getFieldError("lugarHallazgo", localErrors, fieldErrors)}
+          </label>
+
+          <label>
+            Fotografías
+            <input
+              ref={photoInputRef}
+              name="fotos"
+              type="file"
+              accept="image/jpeg,image/png"
+              multiple
+              capture="environment"
+              onChange={handlePhotosChange}
+            />
+            <small>
+              Hasta 5 fotografías JPG o PNG, máximo 10 MB cada una. Si el
+              navegador se recarga al volver de la cámara, selecciona la foto
+              nuevamente.
+            </small>
+            {getFieldError("fotos", localErrors, fieldErrors)}
           </label>
 
           <label>

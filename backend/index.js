@@ -4,7 +4,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import objetoRoutes from './src/routes/objeto.routes.js';
+import objectRoutes from './src/routes/objects.routes.js';
 import {
   updateObject,
   getApprovedObjects,
@@ -33,30 +33,35 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const frontendPath = path.join(__dirname, "../frontend/dist");
 
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "x-user-id", "x-user-role"],
+  }),
+);
 app.use(express.json());
 app.use(morgan("dev"));
 
 app.use('/api/objects', objetoRoutes);
-app.use('/api/autenticacion', autenticacionRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Backend funcionando' });
 });
 
 app.patch(
-  '/api/objetos/:id',
+  '/api/objects/:id',
   devAuthMiddleware,
   updateObject
 );
-app.patch("/api/objetos/:id/aprobar", devAuthMiddleware, approveObject);
+app.patch("/api/objects/:id/approve", devAuthMiddleware, approveObject);
 
 app.get('/api/objects', getApprovedObjects);
 app.get('/api/objects/pending', devAuthMiddleware, getAllPendingObjects);
 app.get('/api/objects/pending/user', devAuthMiddleware, getPendingObjectsByUser);
-app.get("/api/objetos/opciones", getObjectOptions);
+app.get("/api/objects/options", getObjectOptions);
 
-app.delete("/api/objetos/:id", devAuthMiddleware, deletePendingObject);
+app.delete("/api/objects/:id", devAuthMiddleware, deletePendingObject);
 
 app.use(express.static(frontendPath));
 

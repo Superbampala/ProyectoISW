@@ -1,4 +1,6 @@
 import * as objectService from "../services/object.services.js";
+import path from "node:path";
+import { uploadDirectory } from "../middlewares/photo-upload.middleware.js";
 
 export const getObjectOptions = async (req, res) => {
   try {
@@ -18,7 +20,10 @@ export const getAllPendingObjects = async (req, res) => {
       });
     }
 
-    const pendingObjects = await objectService.getAllPendingObjects();
+    const pendingObjects = await objectService.getAllPendingObjects(
+      req.query.page,
+      req.query.limit,
+    );
     res.status(200).json(pendingObjects);
   } catch (error) {
     console.error("Error al obtener los objetos pendientes:", error);
@@ -34,7 +39,11 @@ export const getPendingObjectsByUser = async (req, res) => {
       });
     }
 
-    const pendingObjects = await objectService.getPendingObjectsByUser(req.user.id);
+    const pendingObjects = await objectService.getPendingObjectsByUser(
+      req.user.id,
+      req.query.page,
+      req.query.limit,
+    );
     res.status(200).json(pendingObjects);
   } catch (error) {
     console.error("Error al obtener los objetos pendientes del usuario:", error);
@@ -44,7 +53,10 @@ export const getPendingObjectsByUser = async (req, res) => {
 
 export const getApprovedObjects = async (req, res) => {
   try {
-    const approvedObjects = await objectService.getApprovedObjects();
+    const approvedObjects = await objectService.getApprovedObjects(
+      req.query.page,
+      req.query.limit,
+    );
     res.status(200).json(approvedObjects);
   } catch (error) {
     console.error("Error al obtener los objetos aprobados:", error);
@@ -57,7 +69,7 @@ export const createObject = async (req, res) => {
     const newObject = await objectService.createObject({
       ...req.body,
       usuarioHalladorId: req.user.id,
-    });
+    }, req.files);
 
     const deadline = new Date(newObject.horaLimite).toLocaleTimeString(
       "es-CL",
@@ -72,8 +84,39 @@ export const createObject = async (req, res) => {
       preInscripcion: newObject,
     });
   } catch (error) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        error: "Cada fotografía debe pesar como máximo 10 MB",
+      });
+    }
+    if (error.code === "LIMIT_UNEXPECTED_FILE") {
+      return res.status(400).json({
+        error: "Solo se permiten hasta 5 fotografías JPEG o PNG",
+      });
+    }
     console.error("Error al crear el objeto:", error);
     res.status(500).json({ error: "Error al crear el objeto" });
+  }
+};
+
+export const getObjectPhoto = async (req, res) => {
+  try {
+    const photo = await objectService.getObjectPhoto(req.params.photoId);
+    if (!photo) return res.status(404).json({ error: "Fotografía no encontrada" });
+    if (photo.objetoId !== Number(req.params.objectId)) {
+      return res.status(404).json({ error: "Fotografía no encontrada" });
+    }
+
+    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
+    const isOwner = req.user?.id === photo.objeto.usuarioHalladorId;
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: "No tienes permiso para ver esta fotografía" });
+    }
+
+    return res.sendFile(path.join(uploadDirectory, photo.urlArchivo));
+  } catch (error) {
+    console.error("Error al obtener la fotografía:", error);
+    return res.status(500).json({ error: "Error al obtener la fotografía" });
   }
 };
 
@@ -187,13 +230,19 @@ export const approveObject = async (req, res) => {
       return res.status(403).json({ error });
     }
 
-    const updated = await objectService.approveObject(req.params.id);
+    const updated = await objectService.approveObject(
+      req.params.id,
+      req.user.id,
+    );
 
     return res.status(200).json(updated);
 
 
   }catch (err) {
     console.error(err);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
@@ -221,16 +270,14 @@ export const deletePendingObject = async (req, res) => {
       });
     }
 
-    const deleted = await objectService.deleteObject(req.params.id);
-    if (!deleted) {
-      return res.status(409).json({
-        error: "El objeto dejó de estar pendiente y no pudo eliminarse",
-      });
-    }
+    await objectService.deleteObject(req.params.id, req.user.id);
 
     return res.status(200).json({ message: "Pre-inscripción eliminada correctamente" });
   } catch (err) {
     console.error(err);
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };

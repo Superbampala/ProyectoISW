@@ -24,7 +24,7 @@ export const crearFotoSchema = z.object({
 });
 
 /**
- * 2. Esquema para CONSULTAR fotos por Objeto (GET /api/objetos/:objetoId/fotos)
+ * 2. Esquema para CONSULTAR fotos por Objeto (GET /api/objects/:objetoId/fotos)
  */
 export const consultarFotosPorObjetoSchema = z.object({
   params: z.object({
