@@ -20,6 +20,9 @@ import { registrarCuenta,
          verificarCorreo, 
          reenviarCorreoVerificacion 
         } from './src/controllers/autenticacion.controller.js';
+import { errorHandler } from './src/middlewares/error.middleware.js';
+
+app.use(errorHandler);
 
 
 

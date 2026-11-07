@@ -1,7 +1,17 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { prisma } from '../config/prisma.js'; 
+import prisma from '../config/prisma.js';
 import { enviarCorreoVerificacion } from '../utils/mailer.js'; // Ajusta la ruta según la ubicación de tu archivo mailer
+
+const crearLinkVerificacion = (token) => {
+  const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
+
+  if (!frontendUrl) {
+    throw new Error('La variable FRONTEND_URL no está configurada');
+  }
+
+  return `${frontendUrl}/verificar-correo?token=${encodeURIComponent(token)}`;
+};
 
 export const registrarCuenta = async (req, res, next) => {
   try {
@@ -43,7 +53,7 @@ export const registrarCuenta = async (req, res, next) => {
     });
 
     // Construir el enlace de verificación que se enviará al correo del usuario
-    const enlaceVerificacion =`http://localhost:3000/api/autenticacion/verificar?token=${tokenVerificacion}`;
+    const enlaceVerificacion = crearLinkVerificacion(tokenVerificacion);
     
     // Aquí llamar a servicio de mailing para enviar enlaceVerificacion
     await enviarCorreoVerificacion(correo, enlaceVerificacion);
@@ -148,7 +158,7 @@ export const reenviarCorreoVerificacion = async (req, res, next) => {
     });
 
     // Construir nuevo enlace
-    const enlaceVerificacion = `http://localhost:3000/api/autenticacion/verificar?token=${nuevoToken}`;
+    const enlaceVerificacion = crearLinkVerificacion(nuevoToken);
     await enviarCorreoVerificacion(correo, enlaceVerificacion);
 
     return res.status(200).json({
