@@ -9,16 +9,37 @@ import ApprovedObjectsBoard from "./components/approved/approvedObjectBoard/appr
 
 function App() {
   const [view, setView] = useState("menu");
+  const [authMessage, setAuthMessage] = useState("");
   const [user, setUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("ubb-session") || "null")?.usuario || null;
+      const session = JSON.parse(localStorage.getItem("ubb-session") || "null");
+      const payload = session?.token?.split(".")[0];
+      const expiresAt = payload
+        ? JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))).exp
+        : 0;
+
+      if (!session?.usuario || !session?.token || expiresAt <= Date.now()) {
+        localStorage.removeItem("ubb-session");
+        return null;
+      }
+
+      return session.usuario;
     } catch {
+      localStorage.removeItem("ubb-session");
       return null;
     }
   });
 
   if (!user) {
-    return <AuthPage onAuthenticated={setUser} />;
+    return (
+      <AuthPage
+        initialMessage={authMessage}
+        onAuthenticated={(authenticatedUser) => {
+          setAuthMessage("");
+          setUser(authenticatedUser);
+        }}
+      />
+    );
   }
 
   if (view === "form") {
@@ -40,6 +61,7 @@ function App() {
         localStorage.removeItem("ubb-session");
         setUser(null);
         setView("menu");
+        setAuthMessage("Sesión cerrada");
       }}
       onViewApprovedObjects={() => setView("approved")}
       onViewPendingObjects={() => setView("pending")}

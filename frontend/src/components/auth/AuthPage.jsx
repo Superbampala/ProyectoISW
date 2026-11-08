@@ -17,14 +17,16 @@ function getErrorMessage(data, fallback) {
   return fallback;
 }
 
-export default function AuthPage({ onAuthenticated }) {
+export default function AuthPage({ initialMessage = "", onAuthenticated }) {
   const searchParams = new URLSearchParams(window.location.search);
   const verificationToken = searchParams.get("token");
   const [mode, setMode] = useState(verificationToken ? "verify" : "login");
   const [login, setLogin] = useState({ correo: "", password: "" });
   const [registration, setRegistration] = useState(initialRegistration);
   const [message, setMessage] = useState(
-    verificationToken ? "Correo verificado, ya puedes iniciar sesión." : "",
+    verificationToken
+      ? "Correo verificado, ya puedes iniciar sesión."
+      : initialMessage,
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
