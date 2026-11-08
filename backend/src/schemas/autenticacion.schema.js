@@ -48,5 +48,30 @@ export const reenviarVerificacionSchema = z.object({
       .string({ required_error: 'El correo es obligatorio' })
       .trim()
       .email('Debe ser un correo electrónico válido')
+      .toLowerCase()
+  })
+});
+
+export const inicioSesionSchema = z.object({
+  body: z.object({
+    correo: z
+      .string({ required_error: 'El correo es obligatorio' })
+      .trim()
+      .email('Debe ser un correo electrónico válido')
+      .toLowerCase(),
+    password: z
+      .string({ required_error: 'La contraseña es obligatoria' })
+      .min(1, 'La contraseña es obligatoria')
+  })
+});
+
+export const actualizarRolSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive('El ID debe ser mayor a 0')
+  }),
+  body: z.object({
+    rol: z.enum(['USUARIO_UBB', 'ADMIN_PUNTO', 'ADMIN_SISTEMA'], {
+      errorMap: () => ({ message: 'El rol indicado no es válido' })
+    })
   })
 });
