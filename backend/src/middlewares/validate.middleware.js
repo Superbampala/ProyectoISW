@@ -43,8 +43,8 @@ export const validate = (schema) => {
     // - .trim() (eliminación de espacios innecesarios)
     // - .toLowerCase() (conversión de correos a minúsculas)
     if (result.data.body) req.body = result.data.body;
-    if (result.data.query) req.query = result.data.query;
-    if (result.data.params) req.params = result.data.params;
+    if (result.data.query) Object.assign(req.query, result.data.query);
+    if (result.data.params) Object.assign(req.params, result.data.params);
 
     // Llama a la siguiente función middleware 
     next();
