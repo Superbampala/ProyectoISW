@@ -1,0 +1,2 @@
+-- The configuration table and objetos.hora_limite were created by the
+-- preceding migration 20261003185713_add_configuracion_hora.
