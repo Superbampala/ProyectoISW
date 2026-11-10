@@ -40,6 +40,13 @@ body {
   font-weight: 500;
 }
 
+.menu__user {
+  display: block;
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.8rem;
+}
+
 .menu__logout {
   display: grid;
   place-items: center;

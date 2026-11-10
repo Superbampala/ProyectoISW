@@ -8,22 +8,23 @@ import {
 } from "../icons/icons";
 
 export default function MainMenu({
+  user = { nombre: "Usuario", rol: "USUARIO_UBB" },
+  onLogout = () => {},
   onViewApprovedObjects = () => {},
   onViewPendingObjects = () => {},
   onRegisterObject = () => {},
 }) {
-  // Solo de prueba, se debe reemplazar cuando se implemente la autenticación.
-  const user = {
-    rol: "ADMIN_PUNTO",
-  };
   const pendingObjectsTitle =
     user.rol === "USUARIO_UBB" ? "Mis objetos pendientes" : "Objetos pendientes";
 
   return (
     <div className="menu">
       <header className="menu__header">
-        <h1 className="menu__heading">Gestión de objetos perdidos</h1>
-        <button className="menu__logout" type="button" aria-label="Cerrar sesión">
+        <div>
+          <h1 className="menu__heading">Gestión de objetos perdidos</h1>
+          <span className="menu__user">Hola, {user.nombre}</span>
+        </div>
+        <button className="menu__logout" type="button" aria-label="Cerrar sesión" onClick={onLogout}>
           <LogoutIcon />
         </button>
       </header>
