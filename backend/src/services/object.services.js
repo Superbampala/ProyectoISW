@@ -180,7 +180,16 @@ export const getApprovedObjects = async (page = 1, limit = 6) => {
     categoria: true,
     descripcion: true,
     lugarHallazgo: true,
+    puntoId: true,
+    titularRut: true,
+    titularNombre: true,
     fechaRegistro: true,
+    fotos: {
+      select: { id: true, urlArchivo: true },
+    },
+    punto: {
+      select: { id: true, nombre: true },
+    },
   };
 
   const [objects, total] = await prisma.$transaction([
