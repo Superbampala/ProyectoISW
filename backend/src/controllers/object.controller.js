@@ -1,5 +1,6 @@
 import * as objectService from "../services/object.services.js";
 import path from "node:path";
+import fs from "node:fs/promises";
 import { uploadDirectory } from "../middlewares/photo-upload.middleware.js";
 
 export const getObjectOptions = async (req, res) => {
@@ -117,6 +118,74 @@ export const getObjectPhoto = async (req, res) => {
   } catch (error) {
     console.error("Error al obtener la fotografía:", error);
     return res.status(500).json({ error: "Error al obtener la fotografía" });
+  }
+};
+
+export const uploadObjectPhotos = async (req, res) => {
+  try {
+    const objectId = req.params.objectId;
+    const uploadedFiles = req.files || [];
+
+    const object = await objectService.getObjectById(objectId);
+
+    if (!object) {
+      //porque multer ya los guardo, entonces debemos eliminarlos
+      await deleteUploadedFiles(uploadedFiles);
+
+      return res.status(404).json({
+        error: "Pre-inscripción no encontrada",
+      });
+    }
+
+    const allowedRoles = ["ADMIN_PUNTO", "ADMIN_SISTEMA"];
+    const userCanEditPhotos = allowedRoles.includes(req.user?.rol);
+
+    if (!userCanEditPhotos) {
+      //porque multer ya los guardo, entonces debemos eliminarlos
+      await deleteUploadedFiles(uploadedFiles);
+
+      return res.status(403).json({
+        error: "No tienes permiso para editar fotografías",
+      });
+    }
+
+    const photos = await objectService.addObjectPhotos(
+      objectId,
+      uploadedFiles,
+    );
+
+    return res.status(201).json({
+      fotos: photos,
+    });
+  } catch (error) {
+    console.error("Error al agregar fotografías:", error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      error: "Error al agregar fotografías",
+    });
+  }
+};
+
+export const deleteObjectPhoto = async (req, res) => {
+  try {
+    if (!["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol)) {
+      return res.status(403).json({ error: "No tienes permiso para editar fotografías" });
+    }
+    await objectService.removeObjectPhoto(
+      req.params.objectId,
+      req.params.photoId,
+    );
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Error al eliminar la fotografía:", error);
+    if (error.statusCode) return res.status(error.statusCode).json({ error: error.message });
+    return res.status(500).json({ error: "Error al eliminar la fotografía" });
   }
 };
 
