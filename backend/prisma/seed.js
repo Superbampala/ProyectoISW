@@ -15,38 +15,14 @@ const photoFiles = [
 ];
 
 const pendingObjects = [
-  {
-    categoria: "ELECTRONICA",
-    descripcion: "Audífonos inalámbricos encontrados en una sala de clases.",
-    lugarHallazgo: "Edificio de aulas, segundo piso",
-    puntoId: 1,
-  },
-  {
-    categoria: "ROPA_Y_ACCESORIOS",
-    descripcion: "Mochila azul con accesorios personales.",
-    lugarHallazgo: "Biblioteca central",
-    puntoId: 2,
-  },
-  {
-    categoria: "DOCUMENTOS_Y_TARJETAS",
-    descripcion: "Billetera con documentos y tarjetas.",
-    lugarHallazgo: "Casino universitario",
-    puntoId: 1,
-    titularRut: "12345678-5",
-    titularNombre: "Titular de prueba",
-  },
-  {
-    categoria: "LLAVES",
-    descripcion: "Llavero con tres llaves metálicas.",
-    lugarHallazgo: "Estacionamiento de bicicletas",
-    puntoId: 2,
-  },
+  { categoria: "ELECTRONICA", descripcion: "Audífonos inalámbricos encontrados en una sala de clases.", lugarHallazgo: "Edificio de aulas, segundo piso", puntoId: 1 },
+  { categoria: "ROPA_Y_ACCESORIOS", descripcion: "Mochila azul con accesorios personales.", lugarHallazgo: "Biblioteca central", puntoId: 2 },
+  { categoria: "DOCUMENTOS_Y_TARJETAS", descripcion: "Billetera con documentos y tarjetas.", lugarHallazgo: "Casino universitario", puntoId: 1, titularRut: "12345678-5", titularNombre: "Titular de prueba" },
+  { categoria: "LLAVES", descripcion: "Llavero con tres llaves metálicas.", lugarHallazgo: "Estacionamiento de bicicletas", puntoId: 2 },
 ];
 
 async function main() {
-  await Promise.all(
-    photoFiles.map((file) => fs.access(path.join(photosDirectory, file))),
-  );
+  await Promise.all(photoFiles.map((file) => fs.access(path.join(photosDirectory, file))));
 
   await prisma.$transaction(async (transaction) => {
     await transaction.bitacora.deleteMany();
@@ -59,49 +35,17 @@ async function main() {
     await transaction.usuario.deleteMany();
 
     const adminPunto = await transaction.usuario.create({
-      data: {
-        id: 1,
-        nombre: "Administrador de prueba",
-        rut: "11111111-1",
-        correo: "admin.punto@prueba.cl",
-        passwordHash: "seed-password",
-        rol: "ADMIN_PUNTO",
-        habilitado: true,
-      },
+      data: { id: 1, nombre: "Administrador de prueba", rut: "11111111-1", correo: "admin.punto@prueba.cl", passwordHash: "seed-password", rol: "ADMIN_PUNTO", habilitado: true },
     });
-
     const usuario = await transaction.usuario.create({
-      data: {
-        id: 2,
-        nombre: "Usuario de prueba",
-        rut: "22222222-2",
-        correo: "usuario@prueba.cl",
-        passwordHash: "seed-password",
-        rol: "USUARIO_UBB",
-        habilitado: true,
-      },
+      data: { id: 2, nombre: "Usuario de prueba", rut: "22222222-2", correo: "usuario@prueba.cl", passwordHash: "seed-password", rol: "USUARIO_UBB", habilitado: true },
     });
-
     const puntos = await Promise.all([
-      transaction.puntoEntrega.create({
-        data: {
-          id: 1,
-          nombre: "Punto de entrega norte",
-          ubicacion: "Campus norte",
-        },
-      }),
-      transaction.puntoEntrega.create({
-        data: {
-          id: 2,
-          nombre: "Punto de entrega sur",
-          ubicacion: "Campus sur",
-        },
-      }),
+      transaction.puntoEntrega.create({ data: { id: 1, nombre: "Punto de entrega norte", ubicacion: "Campus norte" } }),
+      transaction.puntoEntrega.create({ data: { id: 2, nombre: "Punto de entrega sur", ubicacion: "Campus sur" } }),
     ]);
 
-    await transaction.adminPuntoAsignacion.create({
-      data: { usuarioId: adminPunto.id, puntoId: puntos[0].id },
-    });
+    await transaction.adminPuntoAsignacion.create({ data: { usuarioId: adminPunto.id, puntoId: puntos[0].id } });
 
     for (const [objectIndex, objectData] of pendingObjects.entries()) {
       const object = await transaction.objeto.create({
@@ -112,7 +56,6 @@ async function main() {
           horaLimite: new Date(Date.now() + 2 * 60 * 60 * 1000),
         },
       });
-
       await transaction.foto.createMany({
         data: Array.from({ length: 5 }, (_, photoIndex) => ({
           objetoId: object.id,
@@ -122,9 +65,7 @@ async function main() {
     }
   });
 
-  console.log(
-    `Seed completado: ${pendingObjects.length} objetos pendientes con 5 fotos cada uno.`,
-  );
+  console.log(`Seed completado: ${pendingObjects.length} objetos pendientes con 5 fotos cada uno.`);
 }
 
 main()

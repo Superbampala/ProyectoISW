@@ -210,6 +210,69 @@ export function useEditObject() {
   };
 }
 
+export function useEditObjectPhotos() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const addPhotos = useCallback(async (id, files) => {
+    if (!files.length) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const body = new FormData();
+      files.forEach((file) => body.append("fotos", file));
+      const response = await fetch(`${API_URL}/objects/${id}/photos`, {
+        method: "POST",
+        headers: {
+          "x-user-id": "1",
+          "x-user-role": "ADMIN_PUNTO",
+        },
+        body,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          data.error || "No se pudieron agregar las fotografías",
+        );
+      }
+      return data;
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const removePhoto = useCallback(async (objectId, photoId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `${API_URL}/objects/${objectId}/photos/${photoId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "x-user-id": "1",
+            "x-user-role": "ADMIN_PUNTO",
+          },
+        },
+      );
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "No se pudo eliminar la fotografía");
+      }
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { addPhotos, removePhoto, loading, error };
+}
+
 export function useObjectOptions() {
   const [options, setOptions] = useState({ categorias: [], puntosEntrega: [] });
   const [loading, setLoading] = useState(true);
@@ -329,7 +392,6 @@ export function useGetApprovedObjects() {
 
   useEffect(() => {
     const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchApprovedObjects(controller.signal);
     return () => controller.abort();
   }, [fetchApprovedObjects]);
