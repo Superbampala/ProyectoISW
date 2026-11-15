@@ -34,6 +34,13 @@ export default function ObjectItem({ obj, onUpdated }) {
 
   const category = formatCategory(obj.categoria);
   const timeLeft = getTimeLeft(obj.horaLimite, now);
+  const deadline = obj.horaLimite
+    ? new Date(obj.horaLimite).toLocaleTimeString("es-CL", {
+        timeZone: "America/Santiago",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
 
   function openDetails() {
     setIsOpen(true);
@@ -67,7 +74,9 @@ export default function ObjectItem({ obj, onUpdated }) {
         <div className="card__header">
           <h2 className="card__title">{category}</h2>
           <span className="card__timer">
-            {timeLeft ? `Quedan ${timeLeft}` : "Plazo vencido"}
+            {timeLeft
+              ? `Quedan ${timeLeft} · Vence a las ${deadline}`
+              : `Plazo vencido${deadline ? ` · Venció a las ${deadline}` : ""}`}
           </span>
         </div>
         <p className="card__text">{obj.descripcion}</p>

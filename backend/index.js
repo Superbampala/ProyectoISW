@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import objectRoutes from './src/routes/objects.routes.js';
+import configuracionHoraRoutes from './src/routes/configuracionHora.routes.js';
 import {
   updateObject,
   getApprovedObjects,
@@ -36,6 +37,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 
 app.use('/api/objects', objectRoutes);
+app.use('/api/configuracion-hora', configuracionHoraRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Backend funcionando' });

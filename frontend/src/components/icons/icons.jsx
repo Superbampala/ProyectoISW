@@ -85,3 +85,19 @@ export function PlusIcon() {
     </svg>
   );
 }
+
+export function SettingsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+      <path
+        d="M19 13.5v-3l-2-.7a6 6 0 0 0-.7-1.6l.9-1.9-2.1-2.1-1.9.9a6 6 0 0 0-1.7-.7L11 2.5H8l-.6 1.9a6 6 0 0 0-1.7.7l-1.9-.9-2.1 2.1.9 1.9a6 6 0 0 0-.7 1.7L0 10.5v3l1.9.6a6 6 0 0 0 .7 1.7l-.9 1.9 2.1 2.1 1.9-.9a6 6 0 0 0 1.7.7l.6 1.9h3l.6-1.9a6 6 0 0 0 1.7-.7l1.9.9 2.1-2.1-.9-1.9a6 6 0 0 0 .7-1.7l1.9-.6Z"
+        transform="translate(2 1) scale(.83)"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

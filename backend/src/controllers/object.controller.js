@@ -65,6 +65,7 @@ export const createObject = async (req, res) => {
     const deadline = new Date(newObject.horaLimite).toLocaleTimeString(
       "es-CL",
       {
+        timeZone: "America/Santiago",
         hour: "2-digit",
         minute: "2-digit",
       },

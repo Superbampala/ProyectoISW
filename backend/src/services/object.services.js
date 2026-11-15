@@ -13,6 +13,7 @@ const categorias = [
 
 const DAILY_REGISTRATION_LIMIT = 4;
 const DAILY_REGISTRATION_ROLE = "USUARIO_UBB";
+const DEFAULT_DEADLINE_HOURS = 2;
 
 export class DailyRegistrationLimitError extends Error {
   constructor() {
@@ -65,7 +66,7 @@ export const createObject = async (objectData, files = []) => {
   const timeConfiguration = await prisma.configuracionHora.findFirst({
     orderBy: { fechaCambio: "desc" },
   });
-  const limitHours = timeConfiguration?.horasLimite ?? 2;
+  const limitHours = timeConfiguration?.horasLimite ?? DEFAULT_DEADLINE_HOURS;
 
   const data = {
     categoria,

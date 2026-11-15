@@ -5,27 +5,40 @@ import {
   LogoutIcon,
   PlusIcon,
   SearchIcon,
+  SettingsIcon,
 } from "../icons/icons";
 
 export default function MainMenu({
   onViewApprovedObjects = () => {},
   onViewPendingObjects = () => {},
   onRegisterObject = () => {},
+  onOpenSettings = () => {},
+  userRole = "USUARIO_UBB",
 }) {
-  // Solo de prueba, se debe reemplazar cuando se implemente la autenticación.
-  const user = {
-    rol: "ADMIN_PUNTO",
-  };
   const pendingObjectsTitle =
-    user.rol === "USUARIO_UBB" ? "Mis objetos pendientes" : "Objetos pendientes";
+    userRole === "USUARIO_UBB" ? "Mis objetos pendientes" : "Objetos pendientes";
+  const canManageSettings = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(userRole);
 
   return (
     <div className="menu">
       <header className="menu__header">
         <h1 className="menu__heading">Gestión de objetos perdidos</h1>
-        <button className="menu__logout" type="button" aria-label="Cerrar sesión">
-          <LogoutIcon />
-        </button>
+        <div className="menu__header-actions">
+          {canManageSettings && (
+            <button
+              className="menu__settings"
+              type="button"
+              onClick={onOpenSettings}
+              aria-label="Configuración del plazo de entrega"
+              title="Configuración"
+            >
+              <SettingsIcon />
+            </button>
+          )}
+          <button className="menu__logout" type="button" aria-label="Cerrar sesión">
+            <LogoutIcon />
+          </button>
+        </div>
       </header>
 
       <main className="menu__content">

@@ -1,0 +1,141 @@
+.time-config {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.time-config__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 0 16px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.time-config__back {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.time-config__back:hover,
+.time-config__back:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.time-config__back:focus-visible,
+.time-config__save:focus-visible {
+  outline: 3px solid #6fc2dc;
+  outline-offset: 3px;
+}
+
+.time-config__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.time-config__content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.time-config__panel {
+  display: grid;
+  gap: 22px;
+  padding: 24px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 2px 6px rgba(0, 43, 83, 0.15);
+}
+
+.time-config__heading {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+
+.time-config__current {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.time-config__field {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.time-config__field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+
+.time-config__field input:focus {
+  outline: 2px solid var(--navy);
+  outline-offset: 1px;
+}
+
+.time-config__message {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.time-config__message--error {
+  background: #ffebee;
+  color: #a61b1b;
+}
+
+.time-config__message--success {
+  background: #e5f4eb;
+  color: #176b39;
+}
+
+.time-config__save {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.time-config__save:hover:not(:disabled) {
+  background: var(--navy-dark);
+}
+
+.time-config__save:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 480px) {
+  .time-config__content {
+    padding: 16px 12px 32px;
+  }
+
+  .time-config__panel {
+    padding: 18px;
+  }
+}
