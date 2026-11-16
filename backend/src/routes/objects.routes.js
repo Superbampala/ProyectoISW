@@ -13,7 +13,7 @@ import {
   getObjectOptions,
   deletePendingObject,
 } from '../controllers/object.controller.js';
-import { devAuthMiddleware } from '../middlewares/dev-auth.middleware.js';
+import { autenticarSesion } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import {
   actualizarObjetoSchema,
@@ -29,31 +29,31 @@ import { uploadObjectPhotos as uploadObjectPhotosMiddleware } from '../middlewar
 
 const router = Router();
 
-router.post('/', devAuthMiddleware, uploadObjectPhotos, validate(crearObjetoSchema), createObject);
+router.post('/', autenticarSesion, uploadObjectPhotosMiddleware, validate(crearObjetoSchema), createObject);
 router.get('/', validate(consultarObjetosQuerySchema), getApprovedObjects);
-router.get('/pending', devAuthMiddleware, validate(consultarObjetosQuerySchema), getAllPendingObjects);
-router.get('/pending/user', devAuthMiddleware, validate(consultarObjetosQuerySchema), getPendingObjectsByUser);
+router.get('/pending', autenticarSesion, validate(consultarObjetosQuerySchema), getAllPendingObjects);
+router.get('/pending/user', autenticarSesion, validate(consultarObjetosQuerySchema), getPendingObjectsByUser);
 router.get('/options', getObjectOptions);
 router.get('/puntos-entrega', getDeliveryPoints);
-router.patch('/:id', devAuthMiddleware, validate(actualizarObjetoSchema), updateObject);
-router.patch('/:id/approve', devAuthMiddleware, validate(objetoIdParamSchema), approveObject);
-router.delete('/:id', devAuthMiddleware, validate(objetoIdParamSchema), deletePendingObject);
+router.patch('/:id', autenticarSesion, validate(actualizarObjetoSchema), updateObject);
+router.patch('/:id/approve', autenticarSesion, validate(objetoIdParamSchema), approveObject);
+router.delete('/:id', autenticarSesion, validate(objetoIdParamSchema), deletePendingObject);
 router.post(
   '/:objectId/photos',
-  devAuthMiddleware,
+  autenticarSesion,
   validate(objetoFotoParamSchema),
   uploadObjectPhotosMiddleware,
   uploadObjectPhotos
 );
 router.get(
   '/:objectId/photos/:photoId',
-  devAuthMiddleware,
+  autenticarSesion,
   validate(fotoObjetoParamsSchema),
   getObjectPhoto
 );
 router.delete(
   '/:objectId/photos/:photoId',
-  devAuthMiddleware,
+  autenticarSesion,
   validate(fotoObjetoParamsSchema),
   deleteObjectPhoto
 );
