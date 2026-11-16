@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { API_URL } from "../api/config";
+import { API_URL, getAuthHeaders, getSession } from "../api/config";
 
-export function usePendingObjects(userRole = "ADMIN_PUNTO") {
+export function usePendingObjects(userRole = getSession()?.usuario?.rol) {
   const [objects, setObjects] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -25,12 +25,7 @@ export function usePendingObjects(userRole = "ADMIN_PUNTO") {
       try {
         const response = await fetch(`${API_URL}${endpoint}`, {
           signal,
-          headers: {
-            // Temporal para dev-auth; se reemplazará al conectar la autenticación real.
-            // Temporal para probar con un usuario UBB que tiene objetos pendientes.
-            "x-user-id": isUserScope ? "2" : "1",
-            "x-user-role": isUserScope ? "USUARIO_UBB" : "ADMIN_PUNTO",
-          },
+          headers: getAuthHeaders(),
         });
 
         if (!response.ok) {
@@ -107,10 +102,7 @@ export function useCreateObject() {
 
       const response = await fetch(`${API_URL}/objects`, {
         method: "POST",
-        headers: {
-          "x-user-id": "1",
-          "x-user-role": "USUARIO_UBB",
-        },
+        headers: getAuthHeaders(),
         body,
       });
       const data = await response.json();
@@ -180,8 +172,7 @@ export function useEditObject() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "1",
-          "x-user-role": "ADMIN_PUNTO",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(updatedData),
       });
@@ -223,10 +214,7 @@ export function useEditObjectPhotos() {
       files.forEach((file) => body.append("fotos", file));
       const response = await fetch(`${API_URL}/objects/${id}/photos`, {
         method: "POST",
-        headers: {
-          "x-user-id": "1",
-          "x-user-role": "ADMIN_PUNTO",
-        },
+        headers: getAuthHeaders(),
         body,
       });
       const data = await response.json();
@@ -252,10 +240,7 @@ export function useEditObjectPhotos() {
         `${API_URL}/objects/${objectId}/photos/${photoId}`,
         {
           method: "DELETE",
-          headers: {
-            "x-user-id": "1",
-            "x-user-role": "ADMIN_PUNTO",
-          },
+          headers: getAuthHeaders(),
         },
       );
       if (!response.ok) {
@@ -322,8 +307,7 @@ export function useApproveObject() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "1",
-          "x-user-role": "ADMIN_PUNTO",
+          ...getAuthHeaders(),
         },
       });
 
@@ -422,8 +406,7 @@ export function useDeletePendingObject() {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "1",
-          "x-user-role": "ADMIN_PUNTO",
+          ...getAuthHeaders(),
         },
       });
 

@@ -3,6 +3,9 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { uploadDirectory } from "../middlewares/photo-upload.middleware.js";
 
+const deleteUploadedFiles = (files) =>
+  Promise.all(files.map((file) => fs.unlink(file.path).catch(() => undefined)));
+
 export const getObjectOptions = async (req, res) => {
   try {
     const options = await objectService.getObjectOptions();
@@ -137,8 +140,11 @@ export const uploadObjectPhotos = async (req, res) => {
       });
     }
 
-    const allowedRoles = ["ADMIN_PUNTO", "ADMIN_SISTEMA"];
-    const userCanEditPhotos = allowedRoles.includes(req.user?.rol);
+    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
+    const isOwner =
+      req.user?.id === object.usuarioHalladorId &&
+      object.estado === "PENDIENTE";
+    const userCanEditPhotos = isAdmin || isOwner;
 
     if (!userCanEditPhotos) {
       //porque multer ya los guardo, entonces debemos eliminarlos
@@ -174,7 +180,13 @@ export const uploadObjectPhotos = async (req, res) => {
 
 export const deleteObjectPhoto = async (req, res) => {
   try {
-    if (!["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol)) {
+    const object = await objectService.getObjectById(req.params.objectId);
+    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
+    const isOwner =
+      req.user?.id === object?.usuarioHalladorId &&
+      object?.estado === "PENDIENTE";
+
+    if (!isAdmin && !isOwner) {
       return res.status(403).json({ error: "No tienes permiso para editar fotografías" });
     }
     await objectService.removeObjectPhoto(

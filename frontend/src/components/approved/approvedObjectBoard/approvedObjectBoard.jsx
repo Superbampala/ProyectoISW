@@ -3,15 +3,13 @@ import "./approvedObjectBoard.css";
 import UserObjectItem from "../user/userObjectItem/userObjectItem";
 import AdminObjectItem from "../admin/adminObjectItem/adminObjectItem";
 import { BackIcon } from "../../icons/icons";
+import { getSession } from "../../../api/config";
 
 export default function ObjectsBoard({ onBack = () => {} }) {
   const { objects, loading, error, refetch, goToPage, pagination } =
     useGetApprovedObjects();
 
-  //solo de prueba, se debe eliminar cuando se implemente la autenticación
-  const user = {
-    rol: "ADMIN_PUNTO",
-  };
+  const user = getSession()?.usuario;
 
   return (
     <div className="board">

@@ -9,6 +9,7 @@ import {
   useEditObjectPhotos,
 } from "../../../Hooks/useObject";
 import ProtectedPhoto from "../../protectedPhoto/protectedPhoto";
+import { getSession } from "../../../api/config";
 
 const allowedFields = [
   "categoria",
@@ -59,10 +60,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   const [removedPhotoIds, setRemovedPhotoIds] = useState([]);
   const [newPhotos, setNewPhotos] = useState([]);
 
-  //solo de prueba, se debe eliminar cuando se implemente la autenticación
-  const user = {
-    rol: "ADMIN_PUNTO",
-  };
+  const user = getSession()?.usuario;
 
   const canApproveOrDelete =
     user.rol === "ADMIN_PUNTO" || user.rol === "ADMIN_SISTEMA";
