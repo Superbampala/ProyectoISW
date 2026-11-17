@@ -59,6 +59,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   } = useEditObjectPhotos();
   const [removedPhotoIds, setRemovedPhotoIds] = useState([]);
   const [newPhotos, setNewPhotos] = useState([]);
+  const [expandedPhotoId, setExpandedPhotoId] = useState(null);
 
   const user = getSession()?.usuario;
 
@@ -205,6 +206,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
                     objectId={object.id}
                     photoId={photo.id}
                     alt={`Fotografía de ${formatCategory(object.categoria)}`}
+                    onClick={() => setExpandedPhotoId(photo.id)}
                   />
                   <button
                     type="button"
@@ -386,6 +388,29 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               if (confirmationAction === "ELIMINAR") await confirmDelete();
             }}
           />
+        )}
+        {expandedPhotoId && (
+          <div
+            className="object-details-modal__expanded-photo"
+            aria-modal="true"
+            onClick={(event) => {
+              event.stopPropagation();
+              setExpandedPhotoId(null);
+            }}
+          >
+            <button
+              type="button"
+              className="object-details-modal__close-expanded-photo"
+              onClick={() => setExpandedPhotoId(null)}
+            >
+              Cerrar
+            </button>
+            <ProtectedPhoto
+              objectId={object.id}
+              photoId={expandedPhotoId}
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
         )}
       </div>
     </div>
