@@ -15,9 +15,9 @@ import {
   getObjectOptions,
   deletePendingObject
 } from "./src/controllers/object.controller.js";
-import { approveLog, manualRejectLog } from "./src/controllers/log.controller.js";
 import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
-
+import autenticacionRoutes from './src/routes/autenticacion.routes.js';
+import { errorHandler } from './src/middlewares/error.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,12 +30,13 @@ app.use(
   cors({
     origin: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "x-user-id", "x-user-role"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
   }),
 );
 app.use(express.json());
 app.use(morgan("dev"));
 
+app.use('/api/autenticacion', autenticacionRoutes);
 app.use('/api/objects', objectRoutes);
 app.use('/api/configuracion-hora', configuracionHoraRoutes);
 
@@ -49,9 +50,6 @@ app.patch(
   updateObject
 );
 app.patch("/api/objects/:id/approve", devAuthMiddleware, approveObject);
-
-app.post("/api/objects/:objetoId/approve", devAuthMiddleware, approveLog);
-app.post("/api/objects/:objetoId/reject", devAuthMiddleware, manualRejectLog);
 
 app.get('/api/objects', getApprovedObjects);
 app.get('/api/objects/pending', devAuthMiddleware, getAllPendingObjects);
@@ -69,6 +67,8 @@ app.get("/{*splat}", (req, res, next) => {
 
   res.sendFile(path.join(frontendPath, "index.html"));
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);

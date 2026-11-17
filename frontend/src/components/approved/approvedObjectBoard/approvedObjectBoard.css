@@ -84,6 +84,18 @@ body {
   background: var(--navy-dark);
 }
 
+.board__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 28px;
+}
+
+.board__pagination .board__button {
+  margin-top: 0;
+}
+
 /* ---------- Grid: se adapta solo al ancho de pantalla ---------- */
 .board__grid {
   display: grid;

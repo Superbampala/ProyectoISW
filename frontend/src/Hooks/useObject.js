@@ -3,25 +3,32 @@ import { API_URL } from "../api/config";
 
 export function usePendingObjects(userRole = "ADMIN_PUNTO") {
   const [objects, setObjects] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 6,
+    total: 0,
+    totalPages: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const isUserScope = userRole === "USUARIO_UBB";
 
   const fetchPendingObjects = useCallback(
-    async (signal) => {
+    async (signal, page = 1) => {
       setLoading(true);
       setError(null);
 
-      const endpoint = isUserScope
+      const baseEndpoint = isUserScope
         ? "/objects/pending/user"
         : "/objects/pending";
+      const endpoint = `${baseEndpoint}?page=${page}&limit=6`;
       try {
         const response = await fetch(`${API_URL}${endpoint}`, {
           signal,
           headers: {
             // Temporal para dev-auth; se reemplazará al conectar la autenticación real.
             // Temporal para probar con un usuario UBB que tiene objetos pendientes.
-            "x-user-id": isUserScope ? "11" : "2",
+            "x-user-id": isUserScope ? "2" : "1",
             "x-user-role": isUserScope ? "USUARIO_UBB" : "ADMIN_PUNTO",
           },
         });
@@ -33,7 +40,8 @@ export function usePendingObjects(userRole = "ADMIN_PUNTO") {
         }
 
         const data = await response.json();
-        setObjects(data);
+        setObjects(data.items);
+        setPagination(data);
       } catch (requestError) {
         if (requestError.name !== "AbortError") {
           setError(requestError.message);
@@ -47,18 +55,31 @@ export function usePendingObjects(userRole = "ADMIN_PUNTO") {
 
   useEffect(() => {
     const controller = new AbortController();
-    // La petición sincroniza el listado con la API al montar el componente.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPendingObjects(controller.signal);
     return () => controller.abort();
   }, [fetchPendingObjects]);
 
   const refetch = useCallback(
-    () => fetchPendingObjects(),
+    (page = pagination.page) => fetchPendingObjects(undefined, page),
+    // Mantiene la página actual al volver a cargar los objetos.
+    // Recrea refetch cuando cambia la página actual.
+    [fetchPendingObjects, pagination.page],
+  );
+
+  const goToPage = useCallback(
+    (page) => fetchPendingObjects(undefined, page),
     [fetchPendingObjects],
   );
 
-  return { objects, loading, error, refetch, isUserScope };
+  return {
+    objects,
+    loading,
+    error,
+    refetch,
+    goToPage,
+    pagination,
+    isUserScope,
+  };
 }
 
 
@@ -159,7 +180,7 @@ export function useEditObject() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "2",
+          "x-user-id": "1",
           "x-user-role": "ADMIN_PUNTO",
         },
         body: JSON.stringify(updatedData),
@@ -238,7 +259,7 @@ export function useApproveObject() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "2",
+          "x-user-id": "1",
           "x-user-role": "ADMIN_PUNTO",
         },
       });
@@ -269,30 +290,42 @@ export function useApproveObject() {
 
 export function useGetApprovedObjects() {
   const [objects, setObjects] = useState([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 6,
+    total: 0,
+    totalPages: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchApprovedObjects = useCallback(async (signal) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`${API_URL}/objects`, { signal });
-      if (!response.ok) {
-        throw new Error(
-          `No se pudieron obtener los objetos aprobados (${response.status})`,
+  const fetchApprovedObjects = useCallback(
+    async (signal, page = 1) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(
+          `${API_URL}/objects?page=${page}&limit=6`,
+          { signal },
         );
+        if (!response.ok) {
+          throw new Error(
+            `No se pudieron obtener los objetos aprobados (${response.status})`,
+          );
+        }
+        const data = await response.json();
+        setObjects(data.items);
+        setPagination(data);
+      } catch (requestError) {
+        if (requestError.name !== "AbortError") {
+          setError(requestError.message);
+        }
+      } finally {
+        if (!signal?.aborted) setLoading(false);
       }
-      const data = await response.json();
-      setObjects(data);
-    } catch (requestError) {
-      // Si la solicitud fue abortada, no se establece el error
-      if (requestError.name !== "AbortError") {
-        setError(requestError.message);
-      }
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -302,11 +335,16 @@ export function useGetApprovedObjects() {
   }, [fetchApprovedObjects]);
 
   const refetch = useCallback(
-    () => fetchApprovedObjects(),
+    (page = pagination.page) => fetchApprovedObjects(undefined, page),
+    [fetchApprovedObjects, pagination.page],
+  );
+
+  const goToPage = useCallback(
+    (page) => fetchApprovedObjects(undefined, page),
     [fetchApprovedObjects],
   );
 
-  return { objects, loading, error, refetch };
+  return { objects, loading, error, refetch, goToPage, pagination };
 }
 
 export function useDeletePendingObject() {
@@ -322,7 +360,7 @@ export function useDeletePendingObject() {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "2",
+          "x-user-id": "1",
           "x-user-role": "ADMIN_PUNTO",
         },
       });

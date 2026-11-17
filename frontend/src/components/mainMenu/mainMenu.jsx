@@ -9,20 +9,24 @@ import {
 } from "../icons/icons";
 
 export default function MainMenu({
+  user = { nombre: "Usuario", rol: "USUARIO_UBB" },
+  onLogout = () => {},
   onViewApprovedObjects = () => {},
   onViewPendingObjects = () => {},
   onRegisterObject = () => {},
   onOpenSettings = () => {},
-  userRole = "USUARIO_UBB",
 }) {
   const pendingObjectsTitle =
-    userRole === "USUARIO_UBB" ? "Mis objetos pendientes" : "Objetos pendientes";
-  const canManageSettings = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(userRole);
+    user.rol === "USUARIO_UBB" ? "Mis objetos pendientes" : "Objetos pendientes";
+  const canManageSettings = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(user.rol);
 
   return (
     <div className="menu">
       <header className="menu__header">
-        <h1 className="menu__heading">Gestión de objetos perdidos</h1>
+        <div>
+          <h1 className="menu__heading">Gestión de objetos perdidos</h1>
+          <span className="menu__user">Hola, {user.nombre}</span>
+        </div>
         <div className="menu__header-actions">
           {canManageSettings && (
             <button
@@ -35,7 +39,12 @@ export default function MainMenu({
               <SettingsIcon />
             </button>
           )}
-          <button className="menu__logout" type="button" aria-label="Cerrar sesión">
+          <button
+            className="menu__logout"
+            type="button"
+            onClick={onLogout}
+            aria-label="Cerrar sesión"
+          >
             <LogoutIcon />
           </button>
         </div>

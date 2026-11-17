@@ -6,7 +6,7 @@ import { BackIcon } from "../../icons/icons";
 export default function ObjectsBoard({
   onBack = () => {},
 }) {
-  const { objects, loading, error, refetch, isUserScope } =
+  const { objects, loading, error, refetch, goToPage, pagination, isUserScope } =
     usePendingObjects();
 
   return (
@@ -41,11 +41,35 @@ export default function ObjectsBoard({
         )}
 
         {!loading && !error && objects.length > 0 && (
-          <ul className="board__grid">
-            {objects.map((obj) => (
-              <ObjectItem key={obj.id} obj={obj} onUpdated={refetch} />
-            ))}
-          </ul>
+          <>
+            <ul className="board__grid">
+              {objects.map((obj) => (
+                <ObjectItem key={obj.id} obj={obj} onUpdated={refetch} />
+              ))}
+            </ul>
+            <nav
+              className="board__pagination"
+              aria-label="Paginación de objetos pendientes"
+            >
+              <button
+                className="board__button"
+                onClick={() => goToPage(pagination.page - 1)}
+                disabled={loading || pagination.page <= 1}
+              >
+                Anterior
+              </button>
+              <span>
+                Página {pagination.page} de {pagination.totalPages}
+              </span>
+              <button
+                className="board__button"
+                onClick={() => goToPage(pagination.page + 1)}
+                disabled={loading || pagination.page >= pagination.totalPages}
+              >
+                Siguiente
+              </button>
+            </nav>
+          </>
         )}
       </main>
     </div>
