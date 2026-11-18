@@ -120,21 +120,6 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     }
   };
 
-  // PERMITE ENTRAR COMO ADMINISTRADOR 
-  const handleDevAdminLogin = () => {
-    const data = {
-      token: "development-session",
-      usuario: {
-        id: 1,
-        nombre: "Administrador de prueba",
-        correo: "admin.prueba@ubiobio.cl",
-        rol: "ADMIN_SISTEMA",
-      },
-    };
-    localStorage.setItem("ubb-session", JSON.stringify(data));
-    onAuthenticated(data.usuario);
-  };
-
   // CREA UNA CUENTA Y ESPERA LA VERIFICACION POR CORREO
   const handleRegistration = async (event) => {
     event.preventDefault();

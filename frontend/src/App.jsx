@@ -15,9 +15,9 @@ function App() {
   const [user, setUser] = useState(() => {
     try {
       const session = JSON.parse(localStorage.getItem("ubb-session") || "null");
-      const payload = session?.token?.split(".")[0];
+      const payload = session?.token?.split(".")[1];
       const expiresAt = payload
-        ? JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))).exp
+        ? JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))).exp * 1000
         : 0;
 
       if (!session?.usuario || !session?.token || expiresAt <= Date.now()) {

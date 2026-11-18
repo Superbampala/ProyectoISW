@@ -11,7 +11,8 @@ import {
   registrarCuenta,
   verificarCorreo,
   reenviarCorreoVerificacion,
-  iniciarSesion
+  iniciarSesion,
+  obtenerPerfil
 } from '../controllers/autenticacion.controller.js';
 import { autenticarSesion, exigirRol } from '../middlewares/auth.middleware.js';
 import { listarUsuarios, actualizarRol } from '../controllers/autenticacion.controller.js';
@@ -33,6 +34,8 @@ router.post('/reenviar-verificacion', validate(reenviarVerificacionSchema), reen
 // INICIO DE SESION
 router.post('/login', validate(inicioSesionSchema), iniciarSesion);
 
+// PERFIL DEL USUARIO AUTENTICADO
+router.get('/perfil', autenticarSesion, obtenerPerfil);
 
 // PERMITE A ADMIN SISTEMA VER LA LISTA DE USUARIOS 
 router.get(

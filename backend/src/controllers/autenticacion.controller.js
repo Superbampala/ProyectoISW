@@ -1,5 +1,6 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
 import { enviarCorreoVerificacion } from '../utils/mailer.js'; // Ajusta la ruta según la ubicación de tu archivo mailer
 
@@ -15,26 +16,21 @@ const crearLinkVerificacion = (token) => {
 
 const DURACION_TOKEN_MS = 24 * 60 * 60 * 1000;
 const MENSAJE_CREDENCIALES_INVALIDAS = 'correo o contraseña incorrectos';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 // CREA UNA SESION FIRMADA CON EL ID, ROL Y VENCIMIENTO DEL USUARIO
 const crearTokenSesion = (usuario) => {
-  const secreto = process.env.SESSION_SECRET;
-  if (!secreto) {
-    throw new Error('La variable SESSION_SECRET no está configurada');
+  if (!JWT_SECRET) {
+    throw new Error('La variable JWT_SECRET no está configurada');
   }
 
-  const payload = Buffer.from(JSON.stringify({
+  return jwt.sign({
     sub: usuario.id,
+    id: usuario.id,
+    email: usuario.correo,
     rol: usuario.rol,
-    exp: Date.now() + 8 * 60 * 60 * 1000
-  })).toString('base64url');
-
-  const firma = crypto
-    .createHmac('sha256', secreto)
-    .update(payload)
-    .digest('base64url');
-
-  return `${payload}.${firma}`;
+  }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
 // REGISTRA LA CUENTA, GUARDA LA CONTRASEÑA CON HASH Y ENVIA VERIFICACION
@@ -198,6 +194,14 @@ export const iniciarSesion = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+// DEVUELVE EL PERFIL DEL USUARIO ASOCIADO A LA SESION JWT
+export const obtenerPerfil = (req, res) => {
+  return res.status(200).json({
+    status: 'success',
+    usuario: req.user
+  });
 };
 
 // LISTA USUARIOS PARA LA ADMINISTRACION DEL SISTEMA
