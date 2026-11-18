@@ -13,11 +13,10 @@ const categoriasValidas = [
   'OTROS'
 ];
 
-const estadosValidos = [
-  'PENDIENTE',
-  'APROBADO',
-  'ENTREGADO'
-];
+const fechaValida = (value) => {
+  const fecha = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(fecha.getTime()) && fecha.toISOString().startsWith(value);
+};
 
 /**
  * 1. Esquema para CREAR un Objeto (POST /api/objects)
@@ -127,10 +126,17 @@ export const objetoIdParamSchema = z.object({
 export const consultarObjetosQuerySchema = z.object({
   query: z.object({
     categoria: z.enum(categoriasValidas).optional(),
-    estado: z.enum(estadosValidos).optional(),
     puntoId: z.coerce.number().int().positive().optional(),
     usuarioHalladorId: z.coerce.number().int().positive().optional(),
     titularRut: z.string().trim().optional(),
+    desde: z.string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha desde debe tener formato YYYY-MM-DD')
+      .refine(fechaValida, 'La fecha desde no es válida')
+      .optional(),
+    hasta: z.string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha hasta debe tener formato YYYY-MM-DD')
+      .refine(fechaValida, 'La fecha hasta no es válida')
+      .optional(),
     
     // Búsqueda abierta por texto
     search: z.string().trim().optional(),

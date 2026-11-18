@@ -1,4 +1,5 @@
 import "./adminObjectDetailsModal.css";
+import { useState } from "react";
 import ProtectedPhoto from "../../../protectedPhoto/protectedPhoto";
 
 function formatCategory(category = "") {
@@ -9,6 +10,8 @@ function formatCategory(category = "") {
 }
 
 export default function ObjectDetailsModal({ object, onClose }) {
+  const [expandedPhotoId, setExpandedPhotoId] = useState(null);
+
   function handleBackdropClick(event) {
     event.stopPropagation();
     onClose();
@@ -39,6 +42,7 @@ export default function ObjectDetailsModal({ object, onClose }) {
                   objectId={object.id}
                   photoId={photo.id}
                   alt={`Fotografía de ${formatCategory(object.categoria)}`}
+                  onClick={() => setExpandedPhotoId(photo.id)}
                 />
               ))}
             </div>
@@ -85,6 +89,33 @@ export default function ObjectDetailsModal({ object, onClose }) {
             Cerrar
           </button>
         </div>
+        {expandedPhotoId && (
+          <div
+            className="object-details-modal__expanded-photo"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Fotografía ampliada"
+            onClick={(event) => {
+              event.stopPropagation();
+              setExpandedPhotoId(null);
+            }}
+          >
+            <button
+              type="button"
+              className="object-details-modal__close-expanded-photo"
+              onClick={() => setExpandedPhotoId(null)}
+              aria-label="Cerrar fotografía ampliada"
+            >
+              Cerrar
+            </button>
+            <ProtectedPhoto
+              objectId={object.id}
+              photoId={expandedPhotoId}
+              alt={`Fotografía ampliada de ${formatCategory(object.categoria)}`}
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

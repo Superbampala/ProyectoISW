@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_URL, getAuthHeaders } from "../../api/config";
 
-export default function ProtectedPhoto({ objectId, photoId, alt }) {
+export default function ProtectedPhoto({ objectId, photoId, onClick }) {
   const [source, setSource] = useState(null);
 
   useEffect(() => {
@@ -29,5 +29,12 @@ export default function ProtectedPhoto({ objectId, photoId, alt }) {
     };
   }, [objectId, photoId]);
 
-  return source ? <img src={source} alt={alt} loading="lazy" /> : null;
+  return source ? (
+    <img
+      src={source}
+      loading="lazy"
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+    />
+  ) : null;
 }

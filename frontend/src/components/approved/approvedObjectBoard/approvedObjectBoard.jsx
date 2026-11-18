@@ -3,12 +3,13 @@ import "./approvedObjectBoard.css";
 import UserObjectItem from "../user/userObjectItem/userObjectItem";
 import AdminObjectItem from "../admin/adminObjectItem/adminObjectItem";
 import { BackIcon } from "../../icons/icons";
+import ObjectFilters from "../../objectFilters/objectFilters";
 
 export default function ObjectsBoard({
   userRole,
   onBack = () => {},
 }) {
-  const { objects, loading, error, refetch, goToPage, pagination } =
+  const { objects, loading, error, refetch, goToPage, pagination, filters, applyFilters } =
     useGetApprovedObjects(userRole);
 
   return (
@@ -21,6 +22,11 @@ export default function ObjectsBoard({
       </header>
 
       <main className="board__content">
+        <ObjectFilters
+          filters={filters}
+          onApply={applyFilters}
+        />
+
         {loading && <p className="board__state">Cargando...</p>}
 
         {error && (

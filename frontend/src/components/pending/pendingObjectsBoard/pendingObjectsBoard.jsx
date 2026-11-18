@@ -2,13 +2,13 @@ import { usePendingObjects } from "../../../Hooks/useObject";
 import "./pendingObjectsBoard.css";
 import ObjectItem from "../pendingObjectItem/pendingObjectItem";
 import { BackIcon } from "../../icons/icons";
+import ObjectFilters from "../../objectFilters/objectFilters";
 
 export default function ObjectsBoard({
   onBack = () => {},
 }) {
-  const { objects, loading, error, refetch, goToPage, pagination, isUserScope } =
+  const { objects, loading, error, refetch, goToPage, pagination, isUserScope, filters, applyFilters } =
     usePendingObjects();
-
   return (
     <div className="board">
       <header className="board__header">
@@ -21,6 +21,11 @@ export default function ObjectsBoard({
       </header>
 
       <main className="board__content">
+        <ObjectFilters
+          filters={filters}
+          onApply={applyFilters}
+        />
+
         {loading && <p className="board__state">Cargando...</p>}
 
         {error && (

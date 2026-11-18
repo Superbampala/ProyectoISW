@@ -28,6 +28,12 @@ export const getAllPendingObjects = async (req, res) => {
       req.query.page,
       req.query.limit,
       req.user.rol === "ADMIN_PUNTO",
+      {
+        categoria: req.query.categoria,
+        puntoId: req.query.puntoId,
+        desde: req.query.desde,
+        hasta: req.query.hasta,
+      },
     );
     res.status(200).json(pendingObjects);
   } catch (error) {
@@ -48,6 +54,12 @@ export const getPendingObjectsByUser = async (req, res) => {
       req.user.id,
       req.query.page,
       req.query.limit,
+      {
+        categoria: req.query.categoria,
+        puntoId: req.query.puntoId,
+        desde: req.query.desde,
+        hasta: req.query.hasta,
+      },
     );
     res.status(200).json(pendingObjects);
   } catch (error) {
@@ -61,6 +73,12 @@ export const getApprovedObjects = async (req, res) => {
     const approvedObjects = await objectService.getApprovedObjects(
       req.query.page,
       req.query.limit,
+      {
+        categoria: req.query.categoria,
+        puntoId: req.query.puntoId,
+        desde: req.query.desde,
+        hasta: req.query.hasta,
+      },
     );
     res.status(200).json(approvedObjects);
   } catch (error) {
@@ -81,6 +99,12 @@ export const getApprovedObjectsForPointAdmin = async (req, res) => {
       await objectService.getApprovedObjectsForPointAdmin(
         req.query.page,
         req.query.limit,
+        {
+          categoria: req.query.categoria,
+          puntoId: req.query.puntoId,
+          desde: req.query.desde,
+          hasta: req.query.hasta,
+        },
       );
     return res.status(200).json(approvedObjects);
   } catch (error) {
