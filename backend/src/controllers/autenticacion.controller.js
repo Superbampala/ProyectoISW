@@ -16,6 +16,7 @@ const crearLinkVerificacion = (token) => {
 const DURACION_TOKEN_MS = 24 * 60 * 60 * 1000;
 const MENSAJE_CREDENCIALES_INVALIDAS = 'correo o contraseña incorrectos';
 
+// CREA UNA SESION FIRMADA CON EL ID, ROL Y VENCIMIENTO DEL USUARIO
 const crearTokenSesion = (usuario) => {
   const secreto = process.env.SESSION_SECRET;
   if (!secreto) {
@@ -27,6 +28,7 @@ const crearTokenSesion = (usuario) => {
     rol: usuario.rol,
     exp: Date.now() + 8 * 60 * 60 * 1000
   })).toString('base64url');
+
   const firma = crypto
     .createHmac('sha256', secreto)
     .update(payload)
@@ -35,6 +37,7 @@ const crearTokenSesion = (usuario) => {
   return `${payload}.${firma}`;
 };
 
+// REGISTRA LA CUENTA, GUARDA LA CONTRASEÑA CON HASH Y ENVIA VERIFICACION
 export const registrarCuenta = async (req, res, next) => {
   try {
     const { nombre, rut, correo, password } = req.body;
@@ -61,7 +64,7 @@ export const registrarCuenta = async (req, res, next) => {
     const expiracionToken = new Date();
     expiracionToken.setTime(expiracionToken.getTime() + DURACION_TOKEN_MS);
 
-    // Crear el usuario en estado deshabilitado/inactivo
+    // Crear el usuario en estado deshabilitado
     const nuevoUsuario = await prisma.usuario.create({
       data: {
         nombre,
@@ -97,7 +100,7 @@ export const registrarCuenta = async (req, res, next) => {
   }
 };
 
-// Verificar correo mediante token
+// VERIFICA EL CORREO, HABILITA LA CUENTA Y CONSUME EL TOKEN
 export const verificarCorreo = async (req, res, next) => {
   try {
     const { token } = req.query;
@@ -157,6 +160,7 @@ export const verificarCorreo = async (req, res, next) => {
   }
 };
 
+// AUTENTICA AL USUARIO Y ENTREGA UNA SESION SI SU CUENTA ESTA HABILITADA
 export const iniciarSesion = async (req, res, next) => {
   try {
     const { correo, password } = req.body;
@@ -196,6 +200,7 @@ export const iniciarSesion = async (req, res, next) => {
   }
 };
 
+// LISTA USUARIOS PARA LA ADMINISTRACION DEL SISTEMA
 export const listarUsuarios = async (req, res, next) => {
   try {
     const usuarios = await prisma.usuario.findMany({
@@ -215,6 +220,7 @@ export const listarUsuarios = async (req, res, next) => {
   }
 };
 
+// ACTUALIZA EL ROL DE UN USUARIO ADMINISTRADOR
 export const actualizarRol = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -249,7 +255,7 @@ export const actualizarRol = async (req, res, next) => {
   }
 };
 
-// Reenviar correo de verificación
+// GENERA Y ENVIA UN NUEVO ENLACE DE VERIFICACION
 export const reenviarCorreoVerificacion = async (req, res, next) => {
   try {
     const { correo } = req.body;

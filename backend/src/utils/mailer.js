@@ -9,9 +9,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-/**
- * Envía el correo de verificación al usuario
- */
+// ENVIA EL ENLACE PARA VERIFICAR EL CORREO
 export const enviarCorreoVerificacion = async (correoDestino, enlace) => {
   const mailOptions = {
     from: `"Sistema UBB" <${process.env.EMAIL_USER}>`,

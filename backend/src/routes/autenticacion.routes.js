@@ -18,17 +18,20 @@ import { listarUsuarios, actualizarRol } from '../controllers/autenticacion.cont
 
 const router = Router();
 
+// REGISTRO  DE UNA CUENTA
 // POST /api/autenticacion/registro
 router.post('/registro', validate(registroSchema), registrarCuenta);
 
+// VERIFICACION DEL ENLACE RECIBIDO POR CORREO
 // GET /api/autenticacion/verificar?token=...
 router.get('/verificar', validate(verificarCorreoSchema), verificarCorreo);
 
+// REENVIO DEL ENLACE DE VERIFICACION
 // POST /api/autenticacion/reenviar-verificacion
 router.post('/reenviar-verificacion', validate(reenviarVerificacionSchema), reenviarCorreoVerificacion);
 
+// INICIO DE SESION
 router.post('/login', validate(inicioSesionSchema), iniciarSesion);
-router.post('/iniciar-sesion', validate(inicioSesionSchema), iniciarSesion);
 
 router.get(
   '/usuarios',

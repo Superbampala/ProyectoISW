@@ -10,6 +10,8 @@ import ApprovedObjectsBoard from "./components/approved/approvedObjectBoard/appr
 function App() {
   const [view, setView] = useState("menu");
   const [authMessage, setAuthMessage] = useState("");
+  
+  // RECUPERA LA SESION LOCAL Y RECHAZA TOKENS AUSENTES O VENCIDOS
   const [user, setUser] = useState(() => {
     try {
       const session = JSON.parse(localStorage.getItem("ubb-session") || "null");
@@ -31,6 +33,7 @@ function App() {
   });
 
   if (!user) {
+    // SIN SESION, LA APLICACION SOLO MUESTRA LAS PANTALLAS DE AUTH
     return (
       <AuthPage
         initialMessage={authMessage}
@@ -54,6 +57,7 @@ function App() {
     return <PendingObjectsBoard onBack={() => setView("menu")} />;
   }
 
+  // ELIMINA LA SESION LOCAL Y REGRESA AL LOGIN
   return (
     <MainMenu
       user={user}

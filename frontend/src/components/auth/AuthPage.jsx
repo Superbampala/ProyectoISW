@@ -35,6 +35,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
   const [resendEmail, setResendEmail] = useState("");
   const verificationStarted = useRef(false);
 
+  // VERIFICA AUTOMATICAMENTE EL TOKEN QUE VIENE EN EL ENLACE DEL CORREO
   useEffect(() => {
     if (!verificationToken || verificationStarted.current) return;
     verificationStarted.current = true;
@@ -82,6 +83,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     };
   }, [verificationToken]);
 
+  // CAMBIA ENTRE LOGIN, REGISTRO Y VERIFICACION
   const changeMode = (nextMode) => {
     setMode(nextMode);
     setLoading(false);
@@ -89,6 +91,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     setError("");
   };
 
+  // ENVIA CORREO Y CONTRASEÑA PARA INICIAR SESION
   const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -118,6 +121,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     }
   };
 
+  // PERMITE ENTRAR COMO ADMINISTRADOR SOLO EN MODO DE DESARROLLO
   const handleDevAdminLogin = () => {
     const data = {
       token: "development-session",
@@ -132,6 +136,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     onAuthenticated(data.usuario);
   };
 
+  // CREA UNA CUENTA Y ESPERA LA VERIFICACION POR CORREO
   const handleRegistration = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -157,6 +162,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     }
   };
 
+  // SOLICITA UN NUEVO ENLACE DE VERIFICACION
   const handleResend = async (event) => {
     event?.preventDefault();
     if (!resendEmail.trim()) {

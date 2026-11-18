@@ -32,6 +32,7 @@ export const registroSchema = z.object({
   })
 });
 
+// VALIDA EL TOKEN RECIBIDO EN EL ENLACE DE VERIFICACION
 export const verificarCorreoSchema = z.object({
   query: z.object({
     token: z
@@ -52,6 +53,7 @@ export const reenviarVerificacionSchema = z.object({
   })
 });
 
+// VALIDA LAS CREDENCIALES DEL INICIO DE SESION
 export const inicioSesionSchema = z.object({
   body: z.object({
     correo: z
@@ -65,6 +67,7 @@ export const inicioSesionSchema = z.object({
   })
 });
 
+// VALIDA LOS ROLES QUE PUEDE ASIGNAR EL ADMINISTRADOR DEL SISTEMA
 export const actualizarRolSchema = z.object({
   params: z.object({
     id: z.coerce.number().int().positive('El ID debe ser mayor a 0')

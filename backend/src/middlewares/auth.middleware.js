@@ -39,6 +39,7 @@ const verificarToken = (token) => {
   }
 };
 
+// VERIFICA LA SESION Y CARGA EL USUARIO ACTUAL EN req.user
 export const autenticarSesion = async (req, res, next) => {
   const datos = verificarToken(obtenerToken(req));
   if (!datos) {
@@ -64,6 +65,7 @@ export const autenticarSesion = async (req, res, next) => {
   next();
 };
 
+// COMPRUEBA QUE EL USUARIO TENGA UNO DE LOS ROLES PERMITIDOS
 export const exigirRol = (...roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.rol)) {
     return res.status(403).json({
