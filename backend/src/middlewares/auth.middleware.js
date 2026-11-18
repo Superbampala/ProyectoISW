@@ -39,7 +39,14 @@ export const autenticarSesion = async (req, res, next) => {
 
   const usuario = await prisma.usuario.findUnique({
     where: { id: usuarioId },
-    select: { id: true, nombre: true, correo: true, rol: true, habilitado: true }
+    select: {
+      id: true,
+      nombre: true,
+      correo: true,
+      rol: true,
+      habilitado: true,
+      versionSesion: true
+    }
   });
 
   if (!usuario || !usuario.habilitado) {
@@ -49,7 +56,18 @@ export const autenticarSesion = async (req, res, next) => {
     });
   }
 
-  req.user = usuario;
+  if (
+    typeof datos.versionSesion !== 'number' ||
+    datos.versionSesion !== usuario.versionSesion
+  ) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'La sesión no es válida o ha expirado.'
+    });
+  }
+
+  const { versionSesion, ...usuarioPublico } = usuario;
+  req.user = usuarioPublico;
   next();
 };
 

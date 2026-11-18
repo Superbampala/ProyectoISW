@@ -5,14 +5,19 @@ import {
   verificarCorreoSchema,
   reenviarVerificacionSchema,
   inicioSesionSchema,
-  actualizarRolSchema
+  actualizarRolSchema,
+  solicitarRecuperacionSchema,
+  restablecerPasswordSchema
 } from '../schemas/autenticacion.schema.js';
 import {
   registrarCuenta,
   verificarCorreo,
   reenviarCorreoVerificacion,
   iniciarSesion,
-  obtenerPerfil
+  obtenerPerfil,
+  cerrarSesion,
+  solicitarRecuperacionPassword,
+  restablecerPassword
 } from '../controllers/autenticacion.controller.js';
 import { autenticarSesion, exigirRol } from '../middlewares/auth.middleware.js';
 import { listarUsuarios, actualizarRol } from '../controllers/autenticacion.controller.js';
@@ -34,8 +39,25 @@ router.post('/reenviar-verificacion', validate(reenviarVerificacionSchema), reen
 // INICIO DE SESION
 router.post('/login', validate(inicioSesionSchema), iniciarSesion);
 
+// SOLICITUD DE RECUPERACION DE CONTRASENA
+router.post(
+  '/recuperar-password',
+  validate(solicitarRecuperacionSchema),
+  solicitarRecuperacionPassword
+);
+
+// RESTABLECIMIENTO CON TOKEN DE UN SOLO USO
+router.post(
+  '/restablecer-password',
+  validate(restablecerPasswordSchema),
+  restablecerPassword
+);
+
 // PERFIL DEL USUARIO AUTENTICADO
 router.get('/perfil', autenticarSesion, obtenerPerfil);
+
+// CIERRE DE SESION QUE REVOCARA TODOS LOS TOKENS DEL USUARIO
+router.post('/logout', autenticarSesion, cerrarSesion);
 
 // PERMITE A ADMIN SISTEMA VER LA LISTA DE USUARIOS 
 router.get(

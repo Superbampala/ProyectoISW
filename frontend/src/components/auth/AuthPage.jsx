@@ -18,10 +18,17 @@ function getErrorMessage(data, fallback) {
 export default function AuthPage({ initialMessage = "", onAuthenticated }) {
   const searchParams = new URLSearchParams(window.location.search);
   const verificationToken = searchParams.get("token");
+  const resetToken = searchParams.get("resetToken");
 
-  const [mode, setMode] = useState(verificationToken ? "verify" : "login");
+  const [mode, setMode] = useState(
+    resetToken ? "reset" : verificationToken ? "verify" : "login",
+  );
   const [login, setLogin] = useState({ correo: "", password: "" });
   const [registration, setRegistration] = useState(initialRegistration);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetPasswordConfirmation, setResetPasswordConfirmation] = useState("");
   const [message, setMessage] = useState(
     verificationToken
       ? "Correo verificado, ya puedes iniciar sesión."
@@ -84,6 +91,9 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
 
   // CAMBIA ENTRE LOGIN, REGISTRO Y VERIFICACION
   const changeMode = (nextMode) => {
+    if (nextMode === "login" && resetToken) {
+      window.history.replaceState({}, "", "/");
+    }
     setMode(nextMode);
     setLoading(false);
     setMessage("");
@@ -178,6 +188,80 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     }
   };
 
+  const handlePasswordRecovery = async (event) => {
+    event?.preventDefault();
+    if (!recoveryEmail.trim()) {
+      setError("Ingresa el correo de la cuenta.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch(
+        `${API_URL}/autenticacion/recuperar-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ correo: recoveryEmail }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        setError(getErrorMessage(data, "No fue posible solicitar la recuperación."));
+        return;
+      }
+      setMessage(data.message);
+      setRecoveryOpen(false);
+    } catch {
+      setError("No fue posible conectar con el servidor.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (event) => {
+    event.preventDefault();
+
+    if (resetPassword !== resetPasswordConfirmation) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch(
+        `${API_URL}/autenticacion/restablecer-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: resetToken,
+            password: resetPassword,
+          }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        setError(getErrorMessage(data, "No fue posible restablecer la contraseña."));
+        return;
+      }
+
+      window.history.replaceState({}, "", "/");
+      setResetPassword("");
+      setResetPasswordConfirmation("");
+      setMode("login");
+      setMessage("Contraseña actualizada");
+    } catch {
+      setError("No fue posible conectar con el servidor.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (mode === "verify") {
     return (
       <main className="auth">
@@ -211,6 +295,54 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
               Ir al inicio de sesión
             </button>
           </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (mode === "reset") {
+    return (
+      <main className="auth">
+        <section className="auth__card">
+          <h1 className="auth__title">Restablecer contraseña</h1>
+          {message && <p className="auth__message">{message}</p>}
+          {error && <p className="auth__message auth__message--error">{error}</p>}
+          <form className="auth__form" onSubmit={handleResetPassword}>
+            <label className="auth__field">
+              Nueva contraseña
+              <input
+                required
+                minLength="8"
+                type="password"
+                autoComplete="new-password"
+                value={resetPassword}
+                onChange={(event) => setResetPassword(event.target.value)}
+              />
+            </label>
+            <label className="auth__field">
+              Confirmar contraseña
+              <input
+                required
+                minLength="8"
+                type="password"
+                autoComplete="new-password"
+                value={resetPasswordConfirmation}
+                onChange={(event) =>
+                  setResetPasswordConfirmation(event.target.value)
+                }
+              />
+            </label>
+            <button className="auth__button" type="submit" disabled={loading}>
+              {loading ? "Actualizando..." : "Actualizar contraseña"}
+            </button>
+          </form>
+          <button
+            className="auth__link"
+            type="button"
+            onClick={() => changeMode("login")}
+          >
+            Volver al inicio de sesión
+          </button>
         </section>
       </main>
     );
@@ -283,7 +415,6 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
                   Correo de la cuenta
                   <input
                     id="login-resend-email"
-                    required
                     type="email"
                     value={resendEmail}
                     onChange={(event) => setResendEmail(event.target.value)}
@@ -291,6 +422,42 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
                 </label>
                 <button className="auth__button" type="button" onClick={handleResend} disabled={loading}>
                   {loading ? "Enviando..." : "Enviar correo"}
+                </button>
+              </div>
+            )}
+            <button
+              className="auth__button auth__button--secondary"
+              type="button"
+              onClick={() => {
+                setError("");
+                setMessage("");
+                setRecoveryEmail(login.correo);
+                setRecoveryOpen((current) => !current);
+              }}
+              disabled={loading}
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+            {recoveryOpen && (
+              <div className="auth__resend">
+                <label className="auth__field" htmlFor="password-recovery-email">
+                  Correo de la cuenta
+                  <input
+                    id="password-recovery-email"
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={(event) =>
+                      setRecoveryEmail(event.target.value)
+                    }
+                  />
+                </label>
+                <button
+                  className="auth__button"
+                  type="button"
+                  onClick={handlePasswordRecovery}
+                  disabled={loading}
+                >
+                  {loading ? "Enviando..." : "Enviar enlace"}
                 </button>
               </div>
             )}

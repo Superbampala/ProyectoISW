@@ -92,10 +92,26 @@ function App() {
     <MainMenu
       user={user}
       onLogout={() => {
-        localStorage.removeItem("ubb-session");
-        setUser(null);
-        setView("menu");
-        setAuthMessage("Sesión cerrada");
+        fetch(`${API_URL}/autenticacion/logout`, {
+          method: "POST",
+          headers: getAuthHeaders(),
+        })
+          .then(async (response) => {
+            const data = await response.json();
+            if (!response.ok) {
+              setAuthMessage(
+                data.message || "No fue posible cerrar la sesión",
+              );
+              return;
+            }
+            localStorage.removeItem("ubb-session");
+            setUser(null);
+            setView("menu");
+            setAuthMessage("Sesión cerrada");
+          })
+          .catch(() => {
+            setAuthMessage("No fue posible conectar con el servidor");
+          });
       }}
       onViewApprovedObjects={() => setView("approved")}
       onViewPendingObjects={() => setView("pending")}

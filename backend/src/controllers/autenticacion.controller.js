@@ -2,7 +2,10 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
-import { enviarCorreoVerificacion } from '../utils/mailer.js'; // Ajusta la ruta según la ubicación de tu archivo mailer
+import {
+  enviarCorreoVerificacion,
+  enviarCorreoRecuperacion
+} from '../utils/mailer.js';
 
 const crearLinkVerificacion = (token) => {
   const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
@@ -14,7 +17,18 @@ const crearLinkVerificacion = (token) => {
   return `${frontendUrl}/verificar-correo?token=${encodeURIComponent(token)}`;
 };
 
+const crearLinkRecuperacion = (token) => {
+  const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
+
+  if (!frontendUrl) {
+    throw new Error('La variable FRONTEND_URL no está configurada');
+  }
+
+  return `${frontendUrl}/?resetToken=${encodeURIComponent(token)}`;
+};
+
 const DURACION_TOKEN_MS = 24 * 60 * 60 * 1000;
+const DURACION_RECUPERACION_MS = 60 * 60 * 1000;
 const MENSAJE_CREDENCIALES_INVALIDAS = 'correo o contraseña incorrectos';
 const MENSAJE_REENVIO_VERIFICACION =
   'Si existe una cuenta pendiente de verificar con ese correo, te enviaremos un nuevo enlace.';
@@ -50,6 +64,7 @@ const crearTokenSesion = (usuario) => {
     id: usuario.id,
     email: usuario.correo,
     rol: usuario.rol,
+    versionSesion: usuario.versionSesion,
   }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
@@ -238,6 +253,127 @@ export const obtenerPerfil = (req, res) => {
     status: 'success',
     usuario: req.user
   });
+};
+
+// INVALIDA TODAS LAS SESIONES JWT ACTIVAS DEL USUARIO
+export const cerrarSesion = async (req, res, next) => {
+  try {
+    await prisma.usuario.update({
+      where: { id: req.user.id },
+      data: {
+        versionSesion: { increment: 1 }
+      }
+    });
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Sesión cerrada'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// SOLICITA RECUPERACION SIN REVELAR SI EL CORREO ESTA REGISTRADO
+export const solicitarRecuperacionPassword = async (req, res, next) => {
+  try {
+    const correoNormalizado = req.body.correo.trim().toLowerCase();
+    const usuario = await prisma.usuario.findUnique({
+      where: { correo: correoNormalizado }
+    });
+
+    if (usuario?.habilitado) {
+      const tokenRecuperacion = crypto.randomBytes(32).toString('hex');
+      const expiracionRecuperacion = new Date(Date.now() + DURACION_RECUPERACION_MS);
+
+      await prisma.usuario.update({
+        where: { id: usuario.id },
+        data: {
+          tokenRecuperacion,
+          expiracionRecuperacion
+        }
+      });
+
+      const enlace = crearLinkRecuperacion(tokenRecuperacion);
+      setImmediate(async () => {
+        try {
+          await enviarCorreoRecuperacion(correoNormalizado, enlace);
+        } catch (error) {
+          console.error('ERROR_ENVIO_CORREO_RECUPERACION', {
+            correo: correoNormalizado,
+            mensaje: error.message,
+            fecha: new Date().toISOString()
+          });
+        }
+      });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Si el correo está registrado, recibirás un enlace.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CONSUME EL TOKEN Y ACTUALIZA LA CONTRASENA CON HASH
+export const restablecerPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    const usuario = await prisma.usuario.findUnique({
+      where: { tokenRecuperacion: token }
+    });
+
+    if (!usuario) {
+      return res.status(400).json({
+        status: 'fail',
+        code: 'RESET_TOKEN_INVALID',
+        message: 'El enlace de recuperación es inválido o ya fue utilizado.'
+      });
+    }
+
+    if (
+      !usuario.expiracionRecuperacion ||
+      usuario.expiracionRecuperacion <= new Date()
+    ) {
+      return res.status(400).json({
+        status: 'fail',
+        code: 'RESET_TOKEN_EXPIRED',
+        message: 'El enlace de recuperación ha vencido.'
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const actualizacion = await prisma.usuario.updateMany({
+      where: {
+        id: usuario.id,
+        tokenRecuperacion: token,
+        expiracionRecuperacion: { gt: new Date() }
+      },
+      data: {
+        passwordHash,
+        tokenRecuperacion: null,
+        expiracionRecuperacion: null,
+        versionSesion: { increment: 1 }
+      }
+    });
+
+    if (actualizacion.count !== 1) {
+      return res.status(400).json({
+        status: 'fail',
+        code: 'RESET_TOKEN_INVALID',
+        message: 'El enlace de recuperación es inválido o ya fue utilizado.'
+      });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Contraseña actualizada'
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // LISTA USUARIOS PARA LA ADMINISTRACION DEL SISTEMA

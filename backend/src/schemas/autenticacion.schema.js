@@ -53,6 +53,28 @@ export const reenviarVerificacionSchema = z.object({
   })
 });
 
+export const solicitarRecuperacionSchema = z.object({
+  body: z.object({
+    correo: z
+      .string({ required_error: 'El correo es obligatorio' })
+      .trim()
+      .email('Debe ser un correo electrónico válido')
+      .toLowerCase()
+  })
+});
+
+export const restablecerPasswordSchema = z.object({
+  body: z.object({
+    token: z
+      .string({ required_error: 'El token es obligatorio' })
+      .trim()
+      .min(1, 'El token no puede estar vacío'),
+    password: z
+      .string({ required_error: 'La contraseña es obligatoria' })
+      .min(8, 'La contraseña debe tener al menos 8 caracteres')
+  })
+});
+
 // VALIDA LAS CREDENCIALES DEL INICIO DE SESION
 export const inicioSesionSchema = z.object({
   body: z.object({
