@@ -11,6 +11,35 @@ const categorias = [
   "OTROS",
 ];
 
+const buildObjectFilters = (baseWhere = {}, filters = {}) => {
+  const where = { ...baseWhere };
+
+  if (filters.categoria) {
+    where.categoria = filters.categoria;
+  }
+
+  if (filters.puntoId) {
+    where.puntoId = Number(filters.puntoId);
+  }
+
+  if (filters.desde) {
+    where.fechaRegistro = {
+      // gte -> greater than or equal
+      gte: new Date(`${filters.desde}T00:00:00.000Z`),
+    };
+  }
+
+  if (filters.hasta) {
+    where.fechaRegistro = {
+      ...where.fechaRegistro,
+      //lte: less than or equal
+      lte: new Date(`${filters.hasta}T23:59:59.999Z`),
+    };
+  }
+
+  return where;
+};
+
 export const createObject = async (objectData, files = []) => {
   const {
     categoria,
@@ -208,6 +237,7 @@ export const removeObjectPhoto = async (objectId, photoId) => {
 
 const pendingObjectSelect = {
   id: true,
+  estado: true,
   categoria: true,
   descripcion: true,
   lugarHallazgo: true,
@@ -250,24 +280,31 @@ const getPendingObjectsPage = async (where, page = 1, limit = 6) => {
   };
 };
 
-export const getAllPendingObjects = (page, limit) =>
-  getPendingObjectsPage({ estado: "PENDIENTE" }, page, limit);
-
-export const getPendingObjectsByUser = (userId, page, limit) =>
+export const getAllPendingObjects = (page, limit, filters = {}) =>
   getPendingObjectsPage(
-    {
-      estado: "PENDIENTE",
-      usuarioHalladorId: Number(userId),
-    },
+    buildObjectFilters({ estado: "PENDIENTE" }, filters),
     page,
     limit,
   );
 
-export const getApprovedObjects = async (page = 1, limit = 6) => {
+export const getPendingObjectsByUser = (userId, page, limit, filters = {}) =>
+  getPendingObjectsPage(
+    buildObjectFilters(
+      {
+        estado: "PENDIENTE",
+        usuarioHalladorId: Number(userId),
+      },
+      filters,
+    ),
+    page,
+    limit,
+  );
+
+export const getApprovedObjects = async (page = 1, limit = 6, filters = {}) => {
   const safePage = Math.max(1, Number(page) || 1);
   const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
   const skip = (safePage - 1) * safeLimit;
-  const where = { estado: "APROBADO" };
+  const where = buildObjectFilters({ estado: "APROBADO" }, filters);
   const select = {
     id: true,
     categoria: true,

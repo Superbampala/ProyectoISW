@@ -27,6 +27,12 @@ export const getAllPendingObjects = async (req, res) => {
     const pendingObjects = await objectService.getAllPendingObjects(
       req.query.page,
       req.query.limit,
+      {
+        categoria: req.query.categoria,
+        puntoId: req.query.puntoId,
+        desde: req.query.desde,
+        hasta: req.query.hasta,
+      },
     );
     res.status(200).json(pendingObjects);
   } catch (error) {
@@ -47,6 +53,12 @@ export const getPendingObjectsByUser = async (req, res) => {
       req.user.id,
       req.query.page,
       req.query.limit,
+      {
+        categoria: req.query.categoria,
+        puntoId: req.query.puntoId,
+        desde: req.query.desde,
+        hasta: req.query.hasta,
+      },
     );
     res.status(200).json(pendingObjects);
   } catch (error) {
@@ -60,6 +72,12 @@ export const getApprovedObjects = async (req, res) => {
     const approvedObjects = await objectService.getApprovedObjects(
       req.query.page,
       req.query.limit,
+      {
+        categoria: req.query.categoria,
+        puntoId: req.query.puntoId,
+        desde: req.query.desde,
+        hasta: req.query.hasta,
+      },
     );
     res.status(200).json(approvedObjects);
   } catch (error) {

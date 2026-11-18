@@ -4,9 +4,10 @@ import UserObjectItem from "../user/userObjectItem/userObjectItem";
 import AdminObjectItem from "../admin/adminObjectItem/adminObjectItem";
 import { BackIcon } from "../../icons/icons";
 import { getSession } from "../../../api/config";
+import ObjectFilters from "../../objectFilters/objectFilters";
 
 export default function ObjectsBoard({ onBack = () => {} }) {
-  const { objects, loading, error, refetch, goToPage, pagination } =
+  const { objects, loading, error, refetch, goToPage, pagination, filters, applyFilters } =
     useGetApprovedObjects();
 
   const user = getSession()?.usuario;
@@ -21,6 +22,11 @@ export default function ObjectsBoard({ onBack = () => {} }) {
       </header>
 
       <main className="board__content">
+        <ObjectFilters
+          filters={filters}
+          onApply={applyFilters}
+        />
+
         {loading && <p className="board__state">Cargando...</p>}
 
         {error && (

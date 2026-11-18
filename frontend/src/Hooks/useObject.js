@@ -11,17 +11,35 @@ export function usePendingObjects(userRole = getSession()?.usuario?.rol) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    categoria: "",
+    puntoId: "",
+    desde: "",
+    hasta: "",
+  });
   const isUserScope = userRole === "USUARIO_UBB";
 
   const fetchPendingObjects = useCallback(
-    async (signal, page = 1) => {
+    async (signal, page = 1, activeFilters = filters) => {
       setLoading(true);
       setError(null);
 
       const baseEndpoint = isUserScope
         ? "/objects/pending/user"
         : "/objects/pending";
-      const endpoint = `${baseEndpoint}?page=${page}&limit=6`;
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: "6",
+      });
+      if (activeFilters.categoria) params.set("categoria", activeFilters.categoria);
+
+      if (activeFilters.puntoId) params.set("puntoId", activeFilters.puntoId);
+
+      if (activeFilters.desde) params.set("desde", activeFilters.desde);
+
+      if (activeFilters.hasta) params.set("hasta", activeFilters.hasta);
+
+      const endpoint = `${baseEndpoint}?${params.toString()}`;
       try {
         const response = await fetch(`${API_URL}${endpoint}`, {
           signal,
@@ -45,14 +63,14 @@ export function usePendingObjects(userRole = getSession()?.usuario?.rol) {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [isUserScope],
+    [isUserScope, filters],
   );
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchPendingObjects(controller.signal);
+    fetchPendingObjects(controller.signal, 1, filters);
     return () => controller.abort();
-  }, [fetchPendingObjects]);
+  }, [fetchPendingObjects, filters]);
 
   const refetch = useCallback(
     (page = pagination.page) => fetchPendingObjects(undefined, page),
@@ -66,6 +84,10 @@ export function usePendingObjects(userRole = getSession()?.usuario?.rol) {
     [fetchPendingObjects],
   );
 
+  const applyFilters = useCallback((nextFilters) => {
+    setFilters(nextFilters);
+  }, []);
+
   return {
     objects,
     loading,
@@ -74,9 +96,10 @@ export function usePendingObjects(userRole = getSession()?.usuario?.rol) {
     goToPage,
     pagination,
     isUserScope,
+    filters,
+    applyFilters,
   };
 }
-
 
 export function useCreateObject() {
   const [loading, setLoading] = useState(false);
@@ -219,9 +242,7 @@ export function useEditObjectPhotos() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(
-          data.error || "No se pudieron agregar las fotografías",
-        );
+        throw new Error(data.error || "No se pudieron agregar las fotografías");
       }
       return data;
     } catch (requestError) {
@@ -345,14 +366,32 @@ export function useGetApprovedObjects() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    categoria: "",
+    puntoId: "",
+    desde: "",
+    hasta: "",
+  });
 
   const fetchApprovedObjects = useCallback(
-    async (signal, page = 1) => {
+    async (signal, page = 1, activeFilters = filters) => {
       setLoading(true);
       setError(null);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: "6",
+      });
+      if (activeFilters.categoria)
+        params.set("categoria", activeFilters.categoria);
+
+      if (activeFilters.puntoId) params.set("puntoId", activeFilters.puntoId);
+
+      if (activeFilters.desde) params.set("desde", activeFilters.desde);
+
+      if (activeFilters.hasta) params.set("hasta", activeFilters.hasta);
       try {
         const response = await fetch(
-          `${API_URL}/objects?page=${page}&limit=6`,
+          `${API_URL}/objects?${params.toString()}`,
           { signal },
         );
         if (!response.ok) {
@@ -371,14 +410,14 @@ export function useGetApprovedObjects() {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [],
+    [filters],
   );
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchApprovedObjects(controller.signal);
+    fetchApprovedObjects(controller.signal, 1, filters);
     return () => controller.abort();
-  }, [fetchApprovedObjects]);
+  }, [fetchApprovedObjects, filters]);
 
   const refetch = useCallback(
     (page = pagination.page) => fetchApprovedObjects(undefined, page),
@@ -390,7 +429,20 @@ export function useGetApprovedObjects() {
     [fetchApprovedObjects],
   );
 
-  return { objects, loading, error, refetch, goToPage, pagination };
+  const applyFilters = useCallback((nextFilters) => {
+    setFilters(nextFilters);
+  }, []);
+
+  return {
+    objects,
+    loading,
+    error,
+    refetch,
+    goToPage,
+    pagination,
+    filters,
+    applyFilters,
+  };
 }
 
 export function useDeletePendingObject() {
