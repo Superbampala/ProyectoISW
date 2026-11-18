@@ -11,6 +11,20 @@ const categorias = [
   "OTROS",
 ];
 
+const DAILY_REGISTRATION_LIMIT = 4;
+const DAILY_REGISTRATION_ROLE = "USUARIO_UBB";
+const DEFAULT_DEADLINE_HOURS = 2;
+
+export class DailyRegistrationLimitError extends Error {
+  constructor() {
+    super(
+      "Has alcanzado el límite diario de 4 preinscripciones. Intenta nuevamente mañana.",
+    );
+    this.name = "DailyRegistrationLimitError";
+    this.statusCode = 429;
+  }
+}
+
 export const createObject = async (objectData, files = []) => {
   const {
     categoria,
@@ -52,7 +66,7 @@ export const createObject = async (objectData, files = []) => {
   const timeConfiguration = await prisma.configuracionHora.findFirst({
     orderBy: { fechaCambio: "desc" },
   });
-  const limitHours = timeConfiguration?.horasLimite ?? 2;
+  const limitHours = timeConfiguration?.horasLimite ?? DEFAULT_DEADLINE_HOURS;
 
   const data = {
     categoria,
@@ -71,6 +85,24 @@ export const createObject = async (objectData, files = []) => {
 
   try {
     return await prisma.$transaction(async (transaction) => {
+      if (objectData.usuarioRol === DAILY_REGISTRATION_ROLE) {
+        await transaction.$queryRaw`
+          SELECT pg_advisory_xact_lock(${Number(usuarioHalladorId)})
+        `;
+
+        const [dailyCount] = await transaction.$queryRaw`
+          SELECT COUNT(*)::int AS count
+          FROM "registros_preinscripcion"
+          WHERE "usuario_id" = ${Number(usuarioHalladorId)}
+            AND ("fecha_registro" AT TIME ZONE 'America/Santiago')::date =
+              (CURRENT_TIMESTAMP AT TIME ZONE 'America/Santiago')::date
+        `;
+
+        if (dailyCount.count >= DAILY_REGISTRATION_LIMIT) {
+          throw new DailyRegistrationLimitError();
+        }
+      }
+
       const object = await transaction.objeto.create({ data });
 
       if (files.length > 0) {
@@ -82,6 +114,13 @@ export const createObject = async (objectData, files = []) => {
         });
       }
 
+      await transaction.registroPreinscripcion.create({
+        data: {
+          usuarioId: Number(usuarioHalladorId),
+          objetoId: object.id,
+        },
+      });
+
       return transaction.objeto.findUnique({
         where: { id: object.id },
         include: {
@@ -92,7 +131,6 @@ export const createObject = async (objectData, files = []) => {
               ubicacion: true,
             },
           },
-          fotos: true,
         },
       });
     });
@@ -220,12 +258,14 @@ const pendingObjectSelect = {
     select: { fechaHora: true },
     orderBy: { fechaHora: "asc" },
   },
-  fotos: {
-    select: { id: true, urlArchivo: true },
-  },
 };
 
-const getPendingObjectsPage = async (where, page = 1, limit = 6) => {
+const getPendingObjectsPage = async (
+  where,
+  page = 1,
+  limit = 6,
+  includePhotos = false,
+) => {
   const safePage = Math.max(1, Number(page) || 1);
   const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
   const skip = (safePage - 1) * safeLimit;
@@ -233,7 +273,12 @@ const getPendingObjectsPage = async (where, page = 1, limit = 6) => {
   const [objects, total] = await prisma.$transaction([
     prisma.objeto.findMany({
       where: where,
-      select: pendingObjectSelect,
+      select: includePhotos
+        ? {
+            ...pendingObjectSelect,
+            fotos: { select: { id: true, urlArchivo: true } },
+          }
+        : pendingObjectSelect,
       orderBy: { fechaRegistro: "desc" },
       skip: skip,
       take: safeLimit,
@@ -250,8 +295,13 @@ const getPendingObjectsPage = async (where, page = 1, limit = 6) => {
   };
 };
 
-export const getAllPendingObjects = (page, limit) =>
-  getPendingObjectsPage({ estado: "PENDIENTE" }, page, limit);
+export const getAllPendingObjects = (page, limit, includePhotos = false) =>
+  getPendingObjectsPage(
+    { estado: "PENDIENTE" },
+    page,
+    limit,
+    includePhotos,
+  );
 
 export const getPendingObjectsByUser = (userId, page, limit) =>
   getPendingObjectsPage(
@@ -263,7 +313,11 @@ export const getPendingObjectsByUser = (userId, page, limit) =>
     limit,
   );
 
-export const getApprovedObjects = async (page = 1, limit = 6) => {
+const getApprovedObjectsPage = async (
+  page = 1,
+  limit = 6,
+  includePhotos = false,
+) => {
   const safePage = Math.max(1, Number(page) || 1);
   const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
   const skip = (safePage - 1) * safeLimit;
@@ -277,13 +331,13 @@ export const getApprovedObjects = async (page = 1, limit = 6) => {
     titularRut: true,
     titularNombre: true,
     fechaRegistro: true,
-    fotos: {
-      select: { id: true, urlArchivo: true },
-    },
     punto: {
       select: { id: true, nombre: true },
     },
   };
+  if (includePhotos) {
+    select.fotos = { select: { id: true, urlArchivo: true } };
+  }
 
   const [objects, total] = await prisma.$transaction([
     prisma.objeto.findMany({
@@ -304,6 +358,12 @@ export const getApprovedObjects = async (page = 1, limit = 6) => {
     totalPages: Math.ceil(total / safeLimit),
   };
 };
+
+export const getApprovedObjects = (page, limit) =>
+  getApprovedObjectsPage(page, limit);
+
+export const getApprovedObjectsForPointAdmin = (page, limit) =>
+  getApprovedObjectsPage(page, limit, true);
 
 export const getDeliveryPoints = () => {
   return prisma.puntoEntrega.findMany({
@@ -403,4 +463,71 @@ export const deleteObject = async (id, usuarioId) => {
 
     return { objetoId };
   });
+};
+
+export const deleteExpiredPendingObjects = async () => {
+  const now = new Date();
+  const batch = await prisma.$transaction(async (tx) => {
+    const expiredObjects = await tx.$queryRaw`
+      SELECT "id"
+      FROM "objetos"
+      WHERE "estado" = 'PENDIENTE'
+        AND "hora_limite" <= ${now}
+      ORDER BY "hora_limite" ASC, "id" ASC
+      LIMIT 100
+      FOR UPDATE SKIP LOCKED
+    `;
+
+    if (expiredObjects.length === 0) {
+      return { ids: [], photoFiles: [] };
+    }
+
+    const ids = expiredObjects.map(({ id }) => id);
+    const photos = await tx.foto.findMany({
+      where: { objetoId: { in: ids } },
+      select: { urlArchivo: true },
+    });
+
+    await tx.bitacora.createMany({
+      data: ids.map((id) => ({
+        tipoOperacion: "ELIMINACION_AUTOMATICA",
+        usuarioId: null,
+        objetoId: id,
+        objetoIdHistorico: id,
+      })),
+    });
+
+    const deletion = await tx.objeto.deleteMany({
+      where: {
+        id: { in: ids },
+        estado: "PENDIENTE",
+        horaLimite: { lte: now },
+      },
+    });
+
+    if (deletion.count !== ids.length) {
+      throw new Error("No se pudieron eliminar todos los objetos vencidos");
+    }
+
+    return {
+      ids,
+      photoFiles: photos.map(({ urlArchivo }) => urlArchivo),
+    };
+  });
+
+  const failedPhotoFiles = [];
+  await Promise.all(
+    batch.photoFiles.map(async (filename) => {
+      try {
+        await fs.unlink(path.join(process.cwd(), "uploads", "objects", filename));
+      } catch (error) {
+        if (error.code !== "ENOENT") failedPhotoFiles.push(filename);
+      }
+    }),
+  );
+
+  return {
+    deletedCount: batch.ids.length,
+    failedPhotoFiles,
+  };
 };

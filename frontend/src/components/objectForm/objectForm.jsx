@@ -13,6 +13,8 @@ const categories = [
 ];
 
 const draftStorageKey = "object-form-draft";
+const MAX_PHOTOS = 5;
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
 
 function getInitialForm() {
   const defaultForm = {
@@ -47,6 +49,7 @@ export default function ObjectForm({ onBack = () => {} }) {
     confirmation,
   } = useCreateObject();
   const [localErrors, setLocalErrors] = useState({});
+  const [photoNotice, setPhotoNotice] = useState("");
   const [form, setForm] = useState(getInitialForm);
   const photoInputRef = useRef(null);
 
@@ -74,26 +77,43 @@ export default function ObjectForm({ onBack = () => {} }) {
 
   const handlePhotosChange = (event) => {
     const files = Array.from(event.target.files || []);
-    const invalidType = files.some(
-      (file) => !["image/jpeg", "image/png"].includes(file.type),
-    );
-    const oversized = files.some((file) => file.size > 10 * 1024 * 1024);
-    const tooMany = files.length > 5;
+    if (files.length === 0) return;
 
-    if (invalidType || oversized || tooMany) {
-      setLocalErrors((current) => ({
-        ...current,
-        fotos: tooMany
-          ? "Puedes seleccionar como máximo 5 fotografías"
-          : invalidType
-            ? "Solo se permiten fotografías JPG o PNG"
-            : "Cada fotografía debe pesar como máximo 10 MB",
-      }));
-      event.target.value = "";
-      return;
+    event.target.value = "";
+    const firstFiles = files.slice(0, MAX_PHOTOS);
+    const acceptedFiles = [];
+    let invalidTypeCount = 0;
+    let oversizedCount = 0;
+
+    firstFiles.forEach((file) => {
+      if (!["image/jpeg", "image/png"].includes(file.type)) {
+        invalidTypeCount += 1;
+      } else if (file.size > MAX_PHOTO_SIZE) {
+        oversizedCount += 1;
+      } else {
+        acceptedFiles.push(file);
+      }
+    });
+
+    const notices = [];
+    if (files.length > MAX_PHOTOS) {
+      notices.push(
+        `Se consideraron solo las primeras ${MAX_PHOTOS} fotos; se omitieron ${files.length - MAX_PHOTOS} por superar el límite.`,
+      );
+    }
+    if (invalidTypeCount > 0) {
+      notices.push(
+        `Se omitieron ${invalidTypeCount} archivo(s): solo se aceptan JPG o PNG.`,
+      );
+    }
+    if (oversizedCount > 0) {
+      notices.push(
+        `Se omitieron ${oversizedCount} foto(s) que superan los 10 MB.`,
+      );
     }
 
-    setForm((current) => ({ ...current, fotos: files }));
+    setPhotoNotice(notices.join(" "));
+    setForm((current) => ({ ...current, fotos: acceptedFiles }));
     setLocalErrors((current) => {
       const next = { ...current };
       delete next.fotos;
@@ -146,6 +166,7 @@ export default function ObjectForm({ onBack = () => {} }) {
       await createObject({ ...objectData, fotos: form.fotos });
       sessionStorage.removeItem(draftStorageKey);
       if (photoInputRef.current) photoInputRef.current.value = "";
+      setPhotoNotice("");
       setForm({
         categoria: "",
         descripcion: "",
@@ -256,6 +277,30 @@ export default function ObjectForm({ onBack = () => {} }) {
               navegador se recarga al volver de la cámara, selecciona la foto
               nuevamente.
             </small>
+            {photoNotice && (
+              <span className="object-form__photo-notice" role="status">
+                {photoNotice}
+              </span>
+            )}
+            {form.fotos.length > 0 && (
+              <ul className="object-form__photo-list" aria-label="Fotos adjuntas">
+                {form.fotos.map((file) => (
+                  <li
+                    className="object-form__photo-item"
+                    key={`${file.name}-${file.size}-${file.lastModified}`}
+                  >
+                    <span className="object-form__photo-name">{file.name}</span>
+                    <span
+                      className="object-form__photo-success"
+                      aria-label="Validada y adjunta al formulario"
+                      title="Validada y adjunta al formulario"
+                    >
+                      ✓
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
             {getFieldError("fotos", localErrors, fieldErrors)}
           </label>
 

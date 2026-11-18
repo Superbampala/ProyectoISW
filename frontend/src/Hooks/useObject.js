@@ -335,7 +335,7 @@ export function useApproveObject() {
   };
 }
 
-export function useGetApprovedObjects() {
+export function useGetApprovedObjects(userRole = getSession()?.usuario?.rol) {
   const [objects, setObjects] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -350,10 +350,15 @@ export function useGetApprovedObjects() {
     async (signal, page = 1) => {
       setLoading(true);
       setError(null);
+      const endpoint =
+        userRole === "ADMIN_PUNTO"
+          ? "/objects/admin/approved"
+          : "/objects";
+
       try {
         const response = await fetch(
-          `${API_URL}/objects?page=${page}&limit=6`,
-          { signal },
+          `${API_URL}${endpoint}?page=${page}&limit=6`,
+          { signal, headers: getAuthHeaders() },
         );
         if (!response.ok) {
           throw new Error(
@@ -371,7 +376,7 @@ export function useGetApprovedObjects() {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [],
+    [userRole],
   );
 
   useEffect(() => {

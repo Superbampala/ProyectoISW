@@ -3,13 +3,13 @@ import "./approvedObjectBoard.css";
 import UserObjectItem from "../user/userObjectItem/userObjectItem";
 import AdminObjectItem from "../admin/adminObjectItem/adminObjectItem";
 import { BackIcon } from "../../icons/icons";
-import { getSession } from "../../../api/config";
 
-export default function ObjectsBoard({ onBack = () => {} }) {
+export default function ObjectsBoard({
+  userRole,
+  onBack = () => {},
+}) {
   const { objects, loading, error, refetch, goToPage, pagination } =
-    useGetApprovedObjects();
-
-  const user = getSession()?.usuario;
+    useGetApprovedObjects(userRole);
 
   return (
     <div className="board">
@@ -40,7 +40,7 @@ export default function ObjectsBoard({ onBack = () => {} }) {
           <>
             <ul className="board__grid">
               {objects.map((obj) => (
-                user.rol === "USUARIO_UBB" ? (
+                userRole === "USUARIO_UBB" ? (
                   <UserObjectItem key={obj.id} obj={obj} />
                 ) : (
                   <AdminObjectItem key={obj.id} obj={obj} />

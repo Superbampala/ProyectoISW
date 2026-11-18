@@ -70,6 +70,46 @@
   font-weight: 400;
 }
 
+.object-form__photo-notice {
+  color: #8a4b08;
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.object-form__photo-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.object-form__photo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.object-form__photo-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.object-form__photo-success {
+  flex: 0 0 auto;
+  color: #176b39;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 .object-form__error {
   background: #ffebee;
   color: #a61b1b;
