@@ -193,12 +193,12 @@ model Bitacora {
   id            Int           @id @default(autoincrement())
   tipoOperacion TipoOperacion @map("tipo_operacion")
   fechaHora     DateTime      @default(now()) @map("fecha_hora")
-  // usuarioID es el responsable de la operacion
-  usuarioId         Int
+  // El usuario responsable; null cuando el evento lo genera el sistema.
+  usuarioId         Int?
   objetoId          Int?
   objetoIdHistorico Int      @map("objeto_id_historico")
 
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
   objeto  Objeto? @relation(fields: [objetoId], references: [id], onDelete: SetNull)
 
   @@map("bitacora")

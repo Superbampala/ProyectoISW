@@ -352,3 +352,70 @@ export const deleteObject = async (id, usuarioId) => {
     return { objetoId };
   });
 };
+
+export const deleteExpiredPendingObjects = async () => {
+  const now = new Date();
+  const batch = await prisma.$transaction(async (tx) => {
+    const expiredObjects = await tx.$queryRaw`
+      SELECT "id"
+      FROM "objetos"
+      WHERE "estado" = 'PENDIENTE'
+        AND "hora_limite" <= ${now}
+      ORDER BY "hora_limite" ASC, "id" ASC
+      LIMIT 100
+      FOR UPDATE SKIP LOCKED
+    `;
+
+    if (expiredObjects.length === 0) {
+      return { ids: [], photoFiles: [] };
+    }
+
+    const ids = expiredObjects.map(({ id }) => id);
+    const photos = await tx.foto.findMany({
+      where: { objetoId: { in: ids } },
+      select: { urlArchivo: true },
+    });
+
+    await tx.bitacora.createMany({
+      data: ids.map((id) => ({
+        tipoOperacion: "ELIMINACION_AUTOMATICA",
+        usuarioId: null,
+        objetoId: id,
+        objetoIdHistorico: id,
+      })),
+    });
+
+    const deletion = await tx.objeto.deleteMany({
+      where: {
+        id: { in: ids },
+        estado: "PENDIENTE",
+        horaLimite: { lte: now },
+      },
+    });
+
+    if (deletion.count !== ids.length) {
+      throw new Error("No se pudieron eliminar todos los objetos vencidos");
+    }
+
+    return {
+      ids,
+      photoFiles: photos.map(({ urlArchivo }) => urlArchivo),
+    };
+  });
+
+  const failedPhotoFiles = [];
+  await Promise.all(
+    batch.photoFiles.map(async (filename) => {
+      try {
+        await fs.unlink(path.join(process.cwd(), "uploads", "objects", filename));
+      } catch (error) {
+        if (error.code !== "ENOENT") failedPhotoFiles.push(filename);
+      }
+    }),
+  );
+
+  return {
+    deletedCount: batch.ids.length,
+    failedPhotoFiles,
+  };
+};

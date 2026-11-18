@@ -18,6 +18,7 @@ import {
 import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
 import autenticacionRoutes from './src/routes/autenticacion.routes.js';
 import { errorHandler } from './src/middlewares/error.middleware.js';
+import { startExpiredObjectsCleanupScheduler } from './src/services/expiredObjectsCleanupScheduler.services.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,4 +73,5 @@ app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  startExpiredObjectsCleanupScheduler();
 });
