@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
+import { API_URL, getAuthHeaders } from "./api/config";
 
 import AuthPage from "./components/auth/AuthPage";
 import MainMenu from "./components/mainMenu/mainMenu";
@@ -31,6 +32,35 @@ function App() {
       return null;
     }
   });
+
+  useEffect(() => {
+    if (!user) return;
+
+    const controller = new AbortController();
+
+    fetch(`${API_URL}/autenticacion/perfil`, {
+      headers: getAuthHeaders(),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          localStorage.removeItem("ubb-session");
+          setUser(null);
+          setView("menu");
+          setAuthMessage("La sesión no es válida o ha expirado");
+          return;
+        }
+        setUser(data.usuario);
+      })
+      .catch((requestError) => {
+        if (requestError.name !== "AbortError") {
+          setAuthMessage("No fue posible validar la sesión");
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
 
   if (!user) {
     // SIN SESION, LA APLICACION SOLO MUESTRA LAS PANTALLAS DE AUTH

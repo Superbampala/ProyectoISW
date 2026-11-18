@@ -16,8 +16,28 @@ const crearLinkVerificacion = (token) => {
 
 const DURACION_TOKEN_MS = 24 * 60 * 60 * 1000;
 const MENSAJE_CREDENCIALES_INVALIDAS = 'correo o contraseña incorrectos';
+const MENSAJE_REENVIO_VERIFICACION =
+  'Si existe una cuenta pendiente de verificar con ese correo, te enviaremos un nuevo enlace.';
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const DOMINIOS_INSTITUCIONALES = ['@ubiobio.cl', '@alumnos.ubiobio.cl'];
+
+const esCorreoInstitucional = (correo) =>
+  DOMINIOS_INSTITUCIONALES.some((dominio) => correo.endsWith(dominio));
+
+const enviarCorreoSinBloquear = (correo, enlace) => {
+  setImmediate(async () => {
+    try {
+      await enviarCorreoVerificacion(correo, enlace);
+    } catch (error) {
+      console.error('ERROR_ENVIO_CORREO_VERIFICACION', {
+        correo,
+        mensaje: error.message,
+        fecha: new Date().toISOString()
+      });
+    }
+  });
+};
 
 // CREA UNA SESION FIRMADA CON EL ID, ROL Y VENCIMIENTO DEL USUARIO
 const crearTokenSesion = (usuario) => {
@@ -37,7 +57,16 @@ const crearTokenSesion = (usuario) => {
 export const registrarCuenta = async (req, res, next) => {
   try {
     const { nombre, rut, correo, password } = req.body;
-    const correoNormalizado = correo.toLowerCase();
+    const nombreNormalizado = nombre.trim();
+    const rutNormalizado = rut.trim();
+    const correoNormalizado = correo.trim().toLowerCase();
+
+    if (!esCorreoInstitucional(correoNormalizado)) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'El correo debe pertenecer al dominio institucional (@ubiobio.cl o @alumnos.ubiobio.cl)'
+      });
+    }
 
     // Verificar si el correo ya existe en la base de datos
     const usuarioExistente = await prisma.usuario.findUnique({
@@ -48,6 +77,17 @@ export const registrarCuenta = async (req, res, next) => {
       return res.status(400).json({
         status: 'fail',
         message: 'El correo ya se encuentra registrado en el sistema.'
+      });
+    }
+
+    const rutExistente = await prisma.usuario.findUnique({
+      where: { rut: rutNormalizado }
+    });
+
+    if (rutExistente) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'El RUT ya se encuentra registrado en el sistema.'
       });
     }
 
@@ -63,8 +103,8 @@ export const registrarCuenta = async (req, res, next) => {
     // Crear el usuario en estado deshabilitado
     const nuevoUsuario = await prisma.usuario.create({
       data: {
-        nombre,
-        rut,
+        nombre: nombreNormalizado,
+        rut: rutNormalizado,
         correo: correoNormalizado,
         passwordHash: passwordHash,
         habilitado: false, // Permanece inactivo hasta verificar correo
@@ -77,12 +117,7 @@ export const registrarCuenta = async (req, res, next) => {
     // Construir el enlace de verificación que se enviará al correo del usuario
     const enlaceVerificacion = crearLinkVerificacion(tokenVerificacion);
 
-    try {
-      await enviarCorreoVerificacion(correoNormalizado, enlaceVerificacion);
-    } catch (mailError) {
-      await prisma.usuario.delete({ where: { id: nuevoUsuario.id } });
-      throw mailError;
-    }
+    enviarCorreoSinBloquear(correoNormalizado, enlaceVerificacion);
     
     // Respuesta según el requerimiento
     return res.status(201).json({
@@ -160,8 +195,9 @@ export const verificarCorreo = async (req, res, next) => {
 export const iniciarSesion = async (req, res, next) => {
   try {
     const { correo, password } = req.body;
+    const correoNormalizado = correo.trim().toLowerCase();
     const usuario = await prisma.usuario.findUnique({
-      where: { correo }
+      where: { correo: correoNormalizado }
     });
 
     if (!usuario || !(await bcrypt.compare(password, usuario.passwordHash))) {
@@ -263,23 +299,17 @@ export const actualizarRol = async (req, res, next) => {
 export const reenviarCorreoVerificacion = async (req, res, next) => {
   try {
     const { correo } = req.body;
+    const correoNormalizado = correo.trim().toLowerCase();
 
     const usuario = await prisma.usuario.findUnique({
-      where: { correo }
+      where: { correo: correoNormalizado }
     });
 
-    // Si el usuario no existe o ya está habilitado, respondemos sin revelar datos de seguridad
-    if (!usuario) {
-      return res.status(404).json({
-        status: 'fail',
-        message: 'No existe una cuenta registrada con este correo electrónico.'
-      });
-    }
-
-    if (usuario.habilitado) {
-      return res.status(400).json({
-        status: 'fail',
-        message: 'Esta cuenta ya se encuentra verificada e iniciada.'
+    // Respuesta uniforme: no revelar si existe una cuenta ni si ya fue habilitada.
+    if (!usuario || usuario.habilitado) {
+      return res.status(200).json({
+        status: 'success',
+        message: MENSAJE_REENVIO_VERIFICACION
       });
     }
 
@@ -298,11 +328,11 @@ export const reenviarCorreoVerificacion = async (req, res, next) => {
 
     // Construir nuevo enlace
     const enlaceVerificacion = crearLinkVerificacion(nuevoToken);
-    await enviarCorreoVerificacion(correo, enlaceVerificacion);
+    enviarCorreoSinBloquear(correoNormalizado, enlaceVerificacion);
 
     return res.status(200).json({
       status: 'success',
-      message: `Te hemos reenviado un nuevo correo de verificación a ${correo}`
+      message: MENSAJE_REENVIO_VERIFICACION
     });
 
   } catch (error) {
