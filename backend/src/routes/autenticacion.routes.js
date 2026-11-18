@@ -33,12 +33,15 @@ router.post('/reenviar-verificacion', validate(reenviarVerificacionSchema), reen
 // INICIO DE SESION
 router.post('/login', validate(inicioSesionSchema), iniciarSesion);
 
+
+// PERMITE A ADMIN SISTEMA VER LA LISTA DE USUARIOS 
 router.get(
   '/usuarios',
   autenticarSesion,
   exigirRol('ADMIN_SISTEMA'),
   listarUsuarios
 );
+// PERMITE A ADMIN SISTEMA ACTUALIZAR ROLES
 router.patch(
   '/usuarios/:id/rol',
   autenticarSesion,

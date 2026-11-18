@@ -20,6 +20,7 @@ function getErrorMessage(data, fallback) {
 export default function AuthPage({ initialMessage = "", onAuthenticated }) {
   const searchParams = new URLSearchParams(window.location.search);
   const verificationToken = searchParams.get("token");
+
   const [mode, setMode] = useState(verificationToken ? "verify" : "login");
   const [login, setLogin] = useState({ correo: "", password: "" });
   const [registration, setRegistration] = useState(initialRegistration);
@@ -121,7 +122,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     }
   };
 
-  // PERMITE ENTRAR COMO ADMINISTRADOR SOLO EN MODO DE DESARROLLO
+  // PERMITE ENTRAR COMO ADMINISTRADOR 
   const handleDevAdminLogin = () => {
     const data = {
       token: "development-session",
