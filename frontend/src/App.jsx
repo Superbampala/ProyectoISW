@@ -6,6 +6,7 @@ import MainMenu from "./components/mainMenu/mainMenu";
 import ObjectForm from "./components/objectForm/objectForm";
 import PendingObjectsBoard from "./components/pending/pendingObjectsBoard/pendingObjectsBoard";
 import ApprovedObjectsBoard from "./components/approved/approvedObjectBoard/approvedObjectBoard";
+import TimeConfiguration from "./components/timeConfiguration/timeConfiguration";
 
 function App() {
   const [view, setView] = useState("menu");
@@ -47,11 +48,26 @@ function App() {
   }
 
   if (view === "approved") {
-    return <ApprovedObjectsBoard onBack={() => setView("menu")} />;
+    return (
+      <ApprovedObjectsBoard
+        userRole={user.rol}
+        onBack={() => setView("menu")}
+      />
+    );
   }
 
   if (view === "pending") {
     return <PendingObjectsBoard onBack={() => setView("menu")} />;
+  }
+
+  if (view === "settings") {
+    return (
+      <TimeConfiguration
+        userId={user.id}
+        userRole={user.rol}
+        onBack={() => setView("menu")}
+      />
+    );
   }
 
   return (
@@ -66,6 +82,7 @@ function App() {
       onViewApprovedObjects={() => setView("approved")}
       onViewPendingObjects={() => setView("pending")}
       onRegisterObject={() => setView("form")}
+      onOpenSettings={() => setView("settings")}
     />
   );
 }

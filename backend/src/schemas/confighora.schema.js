@@ -12,15 +12,7 @@ export const crearConfiguracionHoraSchema = z.object({
       })
       .int('Las horas límite deben ser un número entero')
       .positive('Las horas límite deben ser un número mayor a 0')
-      .max(8760, 'El valor máximo permitido es de 8760 horas (1 año)'), // Límite razonable opcional
-
-    actualizadoPorId: z.coerce
-      .number({
-        required_error: 'El ID del usuario administrador es obligatorio',
-        invalid_type_error: 'El ID del usuario debe ser un número entero'
-      })
-      .int()
-      .positive('El ID del usuario debe ser mayor a 0')
+      .max(8760, 'El valor máximo permitido es de 8760 horas (1 año)')
   })
 });
 

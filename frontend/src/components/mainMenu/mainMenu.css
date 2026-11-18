@@ -47,6 +47,13 @@ body {
   font-size: 0.8rem;
 }
 
+.menu__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.menu__settings,
 .menu__logout {
   display: grid;
   place-items: center;
@@ -59,6 +66,8 @@ body {
   cursor: pointer;
 }
 
+.menu__settings:hover,
+.menu__settings:focus-visible,
 .menu__logout:hover,
 .menu__logout:focus-visible {
   background: rgba(255, 255, 255, 0.12);
@@ -102,6 +111,7 @@ body {
 
 .menu__card:focus-visible,
 .menu__create:focus-visible,
+.menu__settings:focus-visible,
 .menu__logout:focus-visible {
   outline: 3px solid var(--navy);
   outline-offset: 3px;

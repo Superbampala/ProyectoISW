@@ -9,6 +9,7 @@ import {
   getApprovedObjects,
   getAllPendingObjects,
   getPendingObjectsByUser,
+  getApprovedObjectsForPointAdmin,
   approveObject,
   getObjectOptions,
   deletePendingObject,
@@ -31,6 +32,12 @@ const router = Router();
 
 router.post('/', autenticarSesion, uploadObjectPhotosMiddleware, validate(crearObjetoSchema), createObject);
 router.get('/', validate(consultarObjetosQuerySchema), getApprovedObjects);
+router.get(
+  '/admin/approved',
+  autenticarSesion,
+  validate(consultarObjetosQuerySchema),
+  getApprovedObjectsForPointAdmin,
+);
 router.get('/pending', autenticarSesion, validate(consultarObjetosQuerySchema), getAllPendingObjects);
 router.get('/pending/user', autenticarSesion, validate(consultarObjetosQuerySchema), getPendingObjectsByUser);
 router.get('/options', getObjectOptions);

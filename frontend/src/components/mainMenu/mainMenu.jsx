@@ -5,6 +5,7 @@ import {
   LogoutIcon,
   PlusIcon,
   SearchIcon,
+  SettingsIcon,
 } from "../icons/icons";
 
 export default function MainMenu({
@@ -13,9 +14,11 @@ export default function MainMenu({
   onViewApprovedObjects = () => {},
   onViewPendingObjects = () => {},
   onRegisterObject = () => {},
+  onOpenSettings = () => {},
 }) {
   const pendingObjectsTitle =
     user.rol === "USUARIO_UBB" ? "Mis objetos pendientes" : "Objetos pendientes";
+  const canManageSettings = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(user.rol);
 
   return (
     <div className="menu">
@@ -24,9 +27,27 @@ export default function MainMenu({
           <h1 className="menu__heading">Gestión de objetos perdidos</h1>
           <span className="menu__user">Hola, {user.nombre}</span>
         </div>
-        <button className="menu__logout" type="button" aria-label="Cerrar sesión" onClick={onLogout}>
-          <LogoutIcon />
-        </button>
+        <div className="menu__header-actions">
+          {canManageSettings && (
+            <button
+              className="menu__settings"
+              type="button"
+              onClick={onOpenSettings}
+              aria-label="Configuración del plazo de entrega"
+              title="Configuración"
+            >
+              <SettingsIcon />
+            </button>
+          )}
+          <button
+            className="menu__logout"
+            type="button"
+            onClick={onLogout}
+            aria-label="Cerrar sesión"
+          >
+            <LogoutIcon />
+          </button>
+        </div>
       </header>
 
       <main className="menu__content">

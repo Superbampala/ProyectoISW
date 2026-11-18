@@ -5,9 +5,11 @@ import morgan from 'morgan';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import objectRoutes from './src/routes/objects.routes.js';
+import configuracionHoraRoutes from './src/routes/configuracionHora.routes.js';
 import autenticacionRoutes from './src/routes/autenticacion.routes.js';
 import healthRoutes from './src/routes/health.routes.js';
 import { errorHandler } from './src/middlewares/error.middleware.js';
+import { startExpiredObjectsCleanupScheduler } from './src/services/expiredObjectsCleanupScheduler.services.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +30,7 @@ app.use(morgan("dev"));
 
 app.use('/api/autenticacion', autenticacionRoutes);
 app.use('/api/objects', objectRoutes);
+app.use('/api/configuracion-hora', configuracionHoraRoutes);
 app.use('/api/health', healthRoutes);
 
 app.use(express.static(frontendPath));
@@ -44,4 +47,5 @@ app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  startExpiredObjectsCleanupScheduler();
 });

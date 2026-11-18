@@ -356,7 +356,7 @@ export function useApproveObject() {
   };
 }
 
-export function useGetApprovedObjects() {
+export function useGetApprovedObjects(userRole = getSession()?.usuario?.rol) {
   const [objects, setObjects] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -389,10 +389,16 @@ export function useGetApprovedObjects() {
       if (activeFilters.desde) params.set("desde", activeFilters.desde);
 
       if (activeFilters.hasta) params.set("hasta", activeFilters.hasta);
+
+      const endpoint =
+        userRole === "ADMIN_PUNTO"
+          ? "/objects/admin/approved"
+          : "/objects";
+
       try {
         const response = await fetch(
-          `${API_URL}/objects?${params.toString()}`,
-          { signal },
+          `${API_URL}${endpoint}?${params.toString()}`,
+          { signal, headers: getAuthHeaders() },
         );
         if (!response.ok) {
           throw new Error(
@@ -410,7 +416,7 @@ export function useGetApprovedObjects() {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [filters],
+    [filters, userRole],
   );
 
   useEffect(() => {

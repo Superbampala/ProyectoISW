@@ -27,6 +27,7 @@ export const getAllPendingObjects = async (req, res) => {
     const pendingObjects = await objectService.getAllPendingObjects(
       req.query.page,
       req.query.limit,
+      req.user.rol === "ADMIN_PUNTO",
       {
         categoria: req.query.categoria,
         puntoId: req.query.puntoId,
@@ -86,16 +87,44 @@ export const getApprovedObjects = async (req, res) => {
   }
 };
 
+export const getApprovedObjectsForPointAdmin = async (req, res) => {
+  if (req.user?.rol !== "ADMIN_PUNTO") {
+    return res.status(403).json({
+      error: "Solo un administrador de punto puede ver fotografías",
+    });
+  }
+
+  try {
+    const approvedObjects =
+      await objectService.getApprovedObjectsForPointAdmin(
+        req.query.page,
+        req.query.limit,
+        {
+          categoria: req.query.categoria,
+          puntoId: req.query.puntoId,
+          desde: req.query.desde,
+          hasta: req.query.hasta,
+        },
+      );
+    return res.status(200).json(approvedObjects);
+  } catch (error) {
+    console.error("Error al obtener los objetos aprobados:", error);
+    return res.status(500).json({ error: "Error al obtener los objetos aprobados" });
+  }
+};
+
 export const createObject = async (req, res) => {
   try {
     const newObject = await objectService.createObject({
       ...req.body,
       usuarioHalladorId: req.user.id,
+      usuarioRol: req.user.rol,
     }, req.files);
 
     const deadline = new Date(newObject.horaLimite).toLocaleTimeString(
       "es-CL",
       {
+        timeZone: "America/Santiago",
         hour: "2-digit",
         minute: "2-digit",
       },
@@ -106,6 +135,9 @@ export const createObject = async (req, res) => {
       preInscripcion: newObject,
     });
   } catch (error) {
+    if (error.statusCode === 429) {
+      return res.status(429).json({ error: error.message });
+    }
     if (error.code === "LIMIT_FILE_SIZE") {
       return res.status(400).json({
         error: "Cada fotografía debe pesar como máximo 10 MB",
@@ -123,16 +155,16 @@ export const createObject = async (req, res) => {
 
 export const getObjectPhoto = async (req, res) => {
   try {
+    if (req.user?.rol !== "ADMIN_PUNTO") {
+      return res.status(403).json({
+        error: "Solo un administrador de punto puede ver fotografías",
+      });
+    }
+
     const photo = await objectService.getObjectPhoto(req.params.photoId);
     if (!photo) return res.status(404).json({ error: "Fotografía no encontrada" });
     if (photo.objetoId !== Number(req.params.objectId)) {
       return res.status(404).json({ error: "Fotografía no encontrada" });
-    }
-
-    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
-    const isOwner = req.user?.id === photo.objeto.usuarioHalladorId;
-    if (!isAdmin && !isOwner) {
-      return res.status(403).json({ error: "No tienes permiso para ver esta fotografía" });
     }
 
     return res.sendFile(path.join(uploadDirectory, photo.urlArchivo));
@@ -179,7 +211,8 @@ export const uploadObjectPhotos = async (req, res) => {
     );
 
     return res.status(201).json({
-      fotos: photos,
+      message: "Fotografías agregadas correctamente",
+      cantidad: photos.length,
     });
   } catch (error) {
     console.error("Error al agregar fotografías:", error);

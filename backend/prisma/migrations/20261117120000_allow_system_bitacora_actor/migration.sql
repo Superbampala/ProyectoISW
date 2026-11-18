@@ -1,0 +1,2 @@
+ALTER TABLE "bitacora"
+ALTER COLUMN "usuarioId" DROP NOT NULL;
