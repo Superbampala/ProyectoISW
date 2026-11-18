@@ -6,17 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import objectRoutes from './src/routes/objects.routes.js';
 import configuracionHoraRoutes from './src/routes/configuracionHora.routes.js';
-import {
-  updateObject,
-  getApprovedObjects,
-  getAllPendingObjects,
-  getPendingObjectsByUser,
-  approveObject,
-  getObjectOptions,
-  deletePendingObject
-} from "./src/controllers/object.controller.js";
-import { devAuthMiddleware } from "./src/middlewares/dev-auth.middleware.js";
 import autenticacionRoutes from './src/routes/autenticacion.routes.js';
+import healthRoutes from './src/routes/health.routes.js';
 import { errorHandler } from './src/middlewares/error.middleware.js';
 import { startExpiredObjectsCleanupScheduler } from './src/services/expiredObjectsCleanupScheduler.services.js';
 
@@ -31,7 +22,7 @@ app.use(
   cors({
     origin: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 app.use(express.json());
@@ -40,24 +31,7 @@ app.use(morgan("dev"));
 app.use('/api/autenticacion', autenticacionRoutes);
 app.use('/api/objects', objectRoutes);
 app.use('/api/configuracion-hora', configuracionHoraRoutes);
-
-app.get('/api/health', (req, res) => {
-  res.json({ message: 'Backend funcionando' });
-});
-
-app.patch(
-  '/api/objects/:id',
-  devAuthMiddleware,
-  updateObject
-);
-app.patch("/api/objects/:id/approve", devAuthMiddleware, approveObject);
-
-app.get('/api/objects', getApprovedObjects);
-app.get('/api/objects/pending', devAuthMiddleware, getAllPendingObjects);
-app.get('/api/objects/pending/user', devAuthMiddleware, getPendingObjectsByUser);
-app.get("/api/objects/options", getObjectOptions);
-
-app.delete("/api/objects/:id", devAuthMiddleware, deletePendingObject);
+app.use('/api/health', healthRoutes);
 
 app.use(express.static(frontendPath));
 

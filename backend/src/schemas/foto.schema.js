@@ -46,3 +46,25 @@ export const fotoIdParamSchema = z.object({
       .positive('El ID de la foto debe ser mayor a 0')
   })
 });
+
+export const fotoObjetoParamsSchema = z.object({
+  params: z.object({
+    objectId: z.coerce
+      .number({ invalid_type_error: 'El ID del objeto debe ser un número entero' })
+      .int()
+      .positive('El ID del objeto debe ser mayor a 0'),
+    photoId: z.coerce
+      .number({ invalid_type_error: 'El ID de la foto debe ser un número entero' })
+      .int()
+      .positive('El ID de la foto debe ser mayor a 0')
+  })
+});
+
+export const objetoFotoParamSchema = z.object({
+  params: z.object({
+    objectId: z.coerce
+      .number({ invalid_type_error: 'El ID del objeto debe ser un número entero' })
+      .int()
+      .positive('El ID del objeto debe ser mayor a 0')
+  })
+});

@@ -4,7 +4,7 @@ import {
   getCurrentTimeConfiguration,
   getTimeConfigurationHistory,
 } from "../controllers/configuracionHora.controller.js";
-import { devAuthMiddleware } from "../middlewares/dev-auth.middleware.js";
+import { autenticarSesion } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import {
   consultarConfiguracionesQuerySchema,
@@ -13,16 +13,16 @@ import {
 
 const router = Router();
 
-router.get("/", devAuthMiddleware, getCurrentTimeConfiguration);
+router.get("/", autenticarSesion, getCurrentTimeConfiguration);
 router.get(
   "/historial",
-  devAuthMiddleware,
+  autenticarSesion,
   validate(consultarConfiguracionesQuerySchema),
   getTimeConfigurationHistory,
 );
 router.post(
   "/",
-  devAuthMiddleware,
+  autenticarSesion,
   validate(crearConfiguracionHoraSchema),
   createTimeConfiguration,
 );

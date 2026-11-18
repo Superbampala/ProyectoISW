@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API_URL } from "../../api/config";
+import { API_URL, getAuthHeaders } from "../../api/config";
 
 export default function ProtectedPhoto({ objectId, photoId, alt }) {
   const [source, setSource] = useState(null);
@@ -9,10 +9,7 @@ export default function ProtectedPhoto({ objectId, photoId, alt }) {
 
     fetch(`${API_URL}/objects/${objectId}/photos/${photoId}`, {
       signal: controller.signal,
-      headers: {
-        "x-user-id": "1",
-        "x-user-role": "ADMIN_PUNTO",
-      },
+      headers: getAuthHeaders(),
     })
       .then((response) => {
         if (!response.ok) throw new Error("No se pudo cargar la fotografía");

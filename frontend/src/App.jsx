@@ -48,7 +48,12 @@ function App() {
   }
 
   if (view === "approved") {
-    return <ApprovedObjectsBoard onBack={() => setView("menu")} />;
+    return (
+      <ApprovedObjectsBoard
+        userRole={user.rol}
+        onBack={() => setView("menu")}
+      />
+    );
   }
 
   if (view === "pending") {

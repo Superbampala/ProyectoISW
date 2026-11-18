@@ -131,7 +131,6 @@ export const createObject = async (objectData, files = []) => {
               ubicacion: true,
             },
           },
-          fotos: true,
         },
       });
     });
@@ -156,6 +155,95 @@ export const getObjectPhoto = (photoId) =>
 export const deleteObjectPhotoFile = (filename) =>
   fs.unlink(path.join(process.cwd(), "uploads", "objects", filename));
 
+export const addObjectPhotos = async (objectId, files) => {
+  const id = Number(objectId);
+  const object = await prisma.objeto.findUnique({
+    where: { id },
+    select: { estado: true, fotos: { select: { id: true } } },
+  });
+
+  if (!object) {
+    const error = new Error("Pre-inscripción no encontrada");
+    error.statusCode = 404;
+    throw error;
+  }
+  if (object.estado !== "PENDIENTE") {
+    const error = new Error(
+      "Solo se pueden editar fotos de objetos pendientes",
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+  if (object.fotos.length + files.length > 5) {
+    for (const file of files) {
+      try {
+        await fs.unlink(file.path);
+      } catch {
+        // El archivo puede no existir; no se detiene el manejo del error principal.
+      }
+    }
+
+    const error = new Error(
+      "Cada objeto puede tener como máximo 5 fotografías",
+    );
+
+    error.statusCode = 400;
+    throw error;
+  }
+
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      await transaction.foto.createMany({
+        data: files.map((file) => ({
+          objetoId: id,
+          urlArchivo: file.filename,
+        })),
+      });
+      return transaction.foto.findMany({
+        where: { objetoId: id },
+        select: { id: true, urlArchivo: true },
+      });
+    });
+  } catch (error) {
+    await Promise.all(
+      files.map((file) => fs.unlink(file.path).catch(() => undefined)),
+    );
+    throw error;
+  }
+};
+
+export const removeObjectPhoto = async (objectId, photoId) => {
+  const id = Number(objectId);
+  const photo = await prisma.foto.findUnique({
+    where: { id: Number(photoId) },
+    include: { objeto: { select: { estado: true } } },
+  });
+
+  if (!photo || photo.objetoId !== id) {
+    const error = new Error("Fotografía no encontrada");
+    error.statusCode = 404;
+    throw error;
+  }
+  if (photo.objeto.estado !== "PENDIENTE") {
+    const error = new Error(
+      "Solo se pueden editar fotos de objetos pendientes",
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+
+  await prisma.foto.delete({ where: { id: photo.id } });
+
+  const references = await prisma.foto.count({
+    where: { urlArchivo: photo.urlArchivo },
+  });
+  if (references === 0) {
+    await deleteObjectPhotoFile(photo.urlArchivo).catch((error) => {
+      if (error.code !== "ENOENT") throw error;
+    });
+  }
+};
+
 const pendingObjectSelect = {
   id: true,
   categoria: true,
@@ -170,22 +258,29 @@ const pendingObjectSelect = {
     select: { fechaHora: true },
     orderBy: { fechaHora: "asc" },
   },
-  fotos: {
-    select: { id: true, urlArchivo: true },
-  },
 };
 
-const getPendingObjectsPage = async (where, page = 1, limit = 6) => {
+const getPendingObjectsPage = async (
+  where,
+  page = 1,
+  limit = 6,
+  includePhotos = false,
+) => {
   const safePage = Math.max(1, Number(page) || 1);
   const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
   const skip = (safePage - 1) * safeLimit;
 
   const [objects, total] = await prisma.$transaction([
     prisma.objeto.findMany({
-      where:where,
-      select: pendingObjectSelect,
+      where: where,
+      select: includePhotos
+        ? {
+            ...pendingObjectSelect,
+            fotos: { select: { id: true, urlArchivo: true } },
+          }
+        : pendingObjectSelect,
       orderBy: { fechaRegistro: "desc" },
-      skip:skip,
+      skip: skip,
       take: safeLimit,
     }),
     prisma.objeto.count({ where }),
@@ -200,16 +295,29 @@ const getPendingObjectsPage = async (where, page = 1, limit = 6) => {
   };
 };
 
-export const getAllPendingObjects = (page, limit) =>
-  getPendingObjectsPage({ estado: "PENDIENTE" }, page, limit);
+export const getAllPendingObjects = (page, limit, includePhotos = false) =>
+  getPendingObjectsPage(
+    { estado: "PENDIENTE" },
+    page,
+    limit,
+    includePhotos,
+  );
 
 export const getPendingObjectsByUser = (userId, page, limit) =>
-  getPendingObjectsPage({
-    estado: "PENDIENTE",
-    usuarioHalladorId: Number(userId),
-  }, page, limit);
+  getPendingObjectsPage(
+    {
+      estado: "PENDIENTE",
+      usuarioHalladorId: Number(userId),
+    },
+    page,
+    limit,
+  );
 
-export const getApprovedObjects = async (page = 1, limit = 6) => {
+const getApprovedObjectsPage = async (
+  page = 1,
+  limit = 6,
+  includePhotos = false,
+) => {
   const safePage = Math.max(1, Number(page) || 1);
   const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
   const skip = (safePage - 1) * safeLimit;
@@ -223,13 +331,13 @@ export const getApprovedObjects = async (page = 1, limit = 6) => {
     titularRut: true,
     titularNombre: true,
     fechaRegistro: true,
-    fotos: {
-      select: { id: true, urlArchivo: true },
-    },
     punto: {
       select: { id: true, nombre: true },
     },
   };
+  if (includePhotos) {
+    select.fotos = { select: { id: true, urlArchivo: true } };
+  }
 
   const [objects, total] = await prisma.$transaction([
     prisma.objeto.findMany({
@@ -250,6 +358,12 @@ export const getApprovedObjects = async (page = 1, limit = 6) => {
     totalPages: Math.ceil(total / safeLimit),
   };
 };
+
+export const getApprovedObjects = (page, limit) =>
+  getApprovedObjectsPage(page, limit);
+
+export const getApprovedObjectsForPointAdmin = (page, limit) =>
+  getApprovedObjectsPage(page, limit, true);
 
 export const getDeliveryPoints = () => {
   return prisma.puntoEntrega.findMany({
@@ -292,9 +406,7 @@ export const approveObject = async (id, usuarioId) => {
     });
 
     if (updated.count !== 1) {
-      const error = new Error(
-        "El objeto no existe o ya no está pendiente",
-      );
+      const error = new Error("El objeto no existe o ya no está pendiente");
       error.statusCode = 409;
       throw error;
     }

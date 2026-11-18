@@ -9,8 +9,6 @@ const initialRegistration = {
   password: "",
 };
 
-const devAuthEnabled = import.meta.env.VITE_DEV_AUTH === "true";
-
 function getErrorMessage(data, fallback) {
   if (data?.message) return data.message;
   if (data?.detalles?.length) return data.detalles[0].mensaje;
@@ -116,20 +114,6 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDevAdminLogin = () => {
-    const data = {
-      token: "development-session",
-      usuario: {
-        id: 1,
-        nombre: "Administrador de prueba",
-        correo: "admin.prueba@ubiobio.cl",
-        rol: "ADMIN_SISTEMA",
-      },
-    };
-    localStorage.setItem("ubb-session", JSON.stringify(data));
-    onAuthenticated(data.usuario);
   };
 
   const handleRegistration = async (event) => {
@@ -303,15 +287,6 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
                   {loading ? "Enviando..." : "Enviar correo"}
                 </button>
               </div>
-            )}
-            {devAuthEnabled && (
-              <button
-                className="auth__button auth__button--secondary"
-                type="button"
-                onClick={handleDevAdminLogin}
-              >
-                Entrar como administrador (prueba)
-              </button>
             )}
           </form>
         )}

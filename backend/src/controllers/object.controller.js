@@ -1,6 +1,10 @@
 import * as objectService from "../services/object.services.js";
 import path from "node:path";
+import fs from "node:fs/promises";
 import { uploadDirectory } from "../middlewares/photo-upload.middleware.js";
+
+const deleteUploadedFiles = (files) =>
+  Promise.all(files.map((file) => fs.unlink(file.path).catch(() => undefined)));
 
 export const getObjectOptions = async (req, res) => {
   try {
@@ -23,6 +27,7 @@ export const getAllPendingObjects = async (req, res) => {
     const pendingObjects = await objectService.getAllPendingObjects(
       req.query.page,
       req.query.limit,
+      req.user.rol === "ADMIN_PUNTO",
     );
     res.status(200).json(pendingObjects);
   } catch (error) {
@@ -61,6 +66,26 @@ export const getApprovedObjects = async (req, res) => {
   } catch (error) {
     console.error("Error al obtener los objetos aprobados:", error);
     res.status(500).json({ error: "Error al obtener los objetos aprobados" });
+  }
+};
+
+export const getApprovedObjectsForPointAdmin = async (req, res) => {
+  if (req.user?.rol !== "ADMIN_PUNTO") {
+    return res.status(403).json({
+      error: "Solo un administrador de punto puede ver fotografías",
+    });
+  }
+
+  try {
+    const approvedObjects =
+      await objectService.getApprovedObjectsForPointAdmin(
+        req.query.page,
+        req.query.limit,
+      );
+    return res.status(200).json(approvedObjects);
+  } catch (error) {
+    console.error("Error al obtener los objetos aprobados:", error);
+    return res.status(500).json({ error: "Error al obtener los objetos aprobados" });
   }
 };
 
@@ -106,22 +131,100 @@ export const createObject = async (req, res) => {
 
 export const getObjectPhoto = async (req, res) => {
   try {
+    if (req.user?.rol !== "ADMIN_PUNTO") {
+      return res.status(403).json({
+        error: "Solo un administrador de punto puede ver fotografías",
+      });
+    }
+
     const photo = await objectService.getObjectPhoto(req.params.photoId);
     if (!photo) return res.status(404).json({ error: "Fotografía no encontrada" });
     if (photo.objetoId !== Number(req.params.objectId)) {
       return res.status(404).json({ error: "Fotografía no encontrada" });
     }
 
-    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
-    const isOwner = req.user?.id === photo.objeto.usuarioHalladorId;
-    if (!isAdmin && !isOwner) {
-      return res.status(403).json({ error: "No tienes permiso para ver esta fotografía" });
-    }
-
     return res.sendFile(path.join(uploadDirectory, photo.urlArchivo));
   } catch (error) {
     console.error("Error al obtener la fotografía:", error);
     return res.status(500).json({ error: "Error al obtener la fotografía" });
+  }
+};
+
+export const uploadObjectPhotos = async (req, res) => {
+  try {
+    const objectId = req.params.objectId;
+    const uploadedFiles = req.files || [];
+
+    const object = await objectService.getObjectById(objectId);
+
+    if (!object) {
+      //porque multer ya los guardo, entonces debemos eliminarlos
+      await deleteUploadedFiles(uploadedFiles);
+
+      return res.status(404).json({
+        error: "Pre-inscripción no encontrada",
+      });
+    }
+
+    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
+    const isOwner =
+      req.user?.id === object.usuarioHalladorId &&
+      object.estado === "PENDIENTE";
+    const userCanEditPhotos = isAdmin || isOwner;
+
+    if (!userCanEditPhotos) {
+      //porque multer ya los guardo, entonces debemos eliminarlos
+      await deleteUploadedFiles(uploadedFiles);
+
+      return res.status(403).json({
+        error: "No tienes permiso para editar fotografías",
+      });
+    }
+
+    const photos = await objectService.addObjectPhotos(
+      objectId,
+      uploadedFiles,
+    );
+
+    return res.status(201).json({
+      message: "Fotografías agregadas correctamente",
+      cantidad: photos.length,
+    });
+  } catch (error) {
+    console.error("Error al agregar fotografías:", error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        error: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      error: "Error al agregar fotografías",
+    });
+  }
+};
+
+export const deleteObjectPhoto = async (req, res) => {
+  try {
+    const object = await objectService.getObjectById(req.params.objectId);
+    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
+    const isOwner =
+      req.user?.id === object?.usuarioHalladorId &&
+      object?.estado === "PENDIENTE";
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: "No tienes permiso para editar fotografías" });
+    }
+    await objectService.removeObjectPhoto(
+      req.params.objectId,
+      req.params.photoId,
+    );
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Error al eliminar la fotografía:", error);
+    if (error.statusCode) return res.status(error.statusCode).json({ error: error.message });
+    return res.status(500).json({ error: "Error al eliminar la fotografía" });
   }
 };
 

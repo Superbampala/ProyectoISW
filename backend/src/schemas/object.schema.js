@@ -64,13 +64,20 @@ export const crearObjetoSchema = z.object({
         .positive('El ID del punto de entrega debe ser mayor a 0'),
 
     })
-    // Regla condicional: exige titularRut si la categoría es DOCUMENTOS_Y_TARJETAS
+    // Regla condicional: exige los datos del titular para documentos y tarjetas
     .superRefine((data, ctx) => {
       if (data.categoria === 'DOCUMENTOS_Y_TARJETAS' && !data.titularRut) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: 'custom',
           path: ['titularRut'],
           message: 'El RUT del titular es obligatorio cuando la categoría es DOCUMENTOS_Y_TARJETAS'
+        });
+      }
+      if (data.categoria === 'DOCUMENTOS_Y_TARJETAS' && !data.titularNombre) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['titularNombre'],
+          message: 'El nombre del titular es obligatorio cuando la categoría es DOCUMENTOS_Y_TARJETAS'
         });
       }
     })
