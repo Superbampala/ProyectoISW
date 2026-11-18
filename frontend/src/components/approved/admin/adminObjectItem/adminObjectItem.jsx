@@ -1,6 +1,7 @@
 import { useState} from "react";
 import "./adminObjectItem.css";
 import ObjectDetailsModal from "../adminObjectDetailsModal/adminObjectDetailsModal";
+import ProtectedPhoto from "../../../protectedPhoto/protectedPhoto";
 
 function formatCategory(categoria = "") {
   const text = categoria.replaceAll("_", " ").toLowerCase();
@@ -11,8 +12,6 @@ export default function AdminObjectItem({ obj, onUpdated }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const category = formatCategory(obj.categoria);
-  const photo = obj.fotos?.[0]?.urlArchivo;
-
   function openDetails() {
     setIsOpen(true);
   }
@@ -28,8 +27,12 @@ export default function AdminObjectItem({ obj, onUpdated }) {
       onClick={openDetails}
     >
       <div className="card__media">
-        {photo ? (
-          <img src={photo} alt={category} loading="lazy" />
+        {obj.fotos?.[0] ? (
+          <ProtectedPhoto
+            objectId={obj.id}
+            photoId={obj.fotos[0].id}
+            alt={category}
+          />
         ) : (
           <span className="card__placeholder">Sin foto</span>
         )}

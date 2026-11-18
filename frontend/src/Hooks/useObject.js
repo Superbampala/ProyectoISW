@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { API_URL } from "../api/config";
+import { API_URL, getAuthHeaders, getSession } from "../api/config";
 
-export function usePendingObjects(userRole = "ADMIN_PUNTO") {
+export function usePendingObjects(userRole = getSession()?.usuario?.rol) {
   const [objects, setObjects] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -25,12 +25,7 @@ export function usePendingObjects(userRole = "ADMIN_PUNTO") {
       try {
         const response = await fetch(`${API_URL}${endpoint}`, {
           signal,
-          headers: {
-            // Temporal para dev-auth; se reemplazará al conectar la autenticación real.
-            // Temporal para probar con un usuario UBB que tiene objetos pendientes.
-            "x-user-id": isUserScope ? "2" : "1",
-            "x-user-role": isUserScope ? "USUARIO_UBB" : "ADMIN_PUNTO",
-          },
+          headers: getAuthHeaders(),
         });
 
         if (!response.ok) {
@@ -107,10 +102,7 @@ export function useCreateObject() {
 
       const response = await fetch(`${API_URL}/objects`, {
         method: "POST",
-        headers: {
-          "x-user-id": "1",
-          "x-user-role": "USUARIO_UBB",
-        },
+        headers: getAuthHeaders(),
         body,
       });
       const data = await response.json();
@@ -180,8 +172,7 @@ export function useEditObject() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "1",
-          "x-user-role": "ADMIN_PUNTO",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(updatedData),
       });
@@ -208,6 +199,63 @@ export function useEditObject() {
     loading,
     error,
   };
+}
+
+export function useEditObjectPhotos() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const addPhotos = useCallback(async (id, files) => {
+    if (!files.length) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const body = new FormData();
+      files.forEach((file) => body.append("fotos", file));
+      const response = await fetch(`${API_URL}/objects/${id}/photos`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          data.error || "No se pudieron agregar las fotografías",
+        );
+      }
+      return data;
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const removePhoto = useCallback(async (objectId, photoId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `${API_URL}/objects/${objectId}/photos/${photoId}`,
+        {
+          method: "DELETE",
+          headers: getAuthHeaders(),
+        },
+      );
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "No se pudo eliminar la fotografía");
+      }
+    } catch (requestError) {
+      setError(requestError.message);
+      throw requestError;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { addPhotos, removePhoto, loading, error };
 }
 
 export function useObjectOptions() {
@@ -259,8 +307,7 @@ export function useApproveObject() {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "1",
-          "x-user-role": "ADMIN_PUNTO",
+          ...getAuthHeaders(),
         },
       });
 
@@ -329,7 +376,6 @@ export function useGetApprovedObjects() {
 
   useEffect(() => {
     const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchApprovedObjects(controller.signal);
     return () => controller.abort();
   }, [fetchApprovedObjects]);
@@ -360,8 +406,7 @@ export function useDeletePendingObject() {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "1",
-          "x-user-role": "ADMIN_PUNTO",
+          ...getAuthHeaders(),
         },
       });
 

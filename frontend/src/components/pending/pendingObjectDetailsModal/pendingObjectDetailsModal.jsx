@@ -6,7 +6,10 @@ import {
   useObjectOptions,
   useApproveObject,
   useDeletePendingObject,
+  useEditObjectPhotos,
 } from "../../../Hooks/useObject";
+import ProtectedPhoto from "../../protectedPhoto/protectedPhoto";
+import { getSession } from "../../../api/config";
 
 const allowedFields = [
   "categoria",
@@ -48,14 +51,25 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   const [formError, setFormError] = useState(null);
   const [confirmationAction, setConfirmationAction] = useState(null);
   const { approveObject } = useApproveObject();
+  const {
+    addPhotos,
+    removePhoto,
+    loading: photosSaving,
+    error: photosError,
+  } = useEditObjectPhotos();
+  const [removedPhotoIds, setRemovedPhotoIds] = useState([]);
+  const [newPhotos, setNewPhotos] = useState([]);
 
-  //solo de prueba, se debe eliminar cuando se implemente la autenticación
-  const user = {
-    rol: "ADMIN_PUNTO",
-  };
+  const user = getSession()?.usuario;
 
   const canApproveOrDelete =
     user.rol === "ADMIN_PUNTO" || user.rol === "ADMIN_SISTEMA";
+  const busy = saving || deleting || photosSaving;
+  const photos = object.fotos || [];
+
+  const visiblePhotos = photos.filter((photo) => {
+    return !removedPhotoIds.includes(photo.id);
+  });
 
   function handleBackdropClick(event) {
     event.stopPropagation();
@@ -66,6 +80,31 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((currentForm) => ({ ...currentForm, [name]: value }));
+  }
+
+  function handlePhotoSelection(event) {
+    const selectedPhotos = Array.from(event.target.files || []);
+    const availableSlots = 5 - visiblePhotos.length - newPhotos.length;
+    if (selectedPhotos.length > availableSlots) {
+      setFormError(
+        `Puedes tener como máximo 5 fotografías. Espacios disponibles: ${availableSlots}.`,
+      );
+      event.target.value = "";
+      return;
+    }
+
+    setFormError(null);
+    setNewPhotos((currentPhotos) => [...currentPhotos, ...selectedPhotos]);
+  }
+
+  function markPhotoForRemoval(photoId) {
+    setRemovedPhotoIds((currentIds) => [...currentIds, photoId]);
+  }
+
+  function removeNewPhoto(index) {
+    setNewPhotos((currentPhotos) =>
+      currentPhotos.filter((_photo, photoIndex) => photoIndex !== index),
+    );
   }
 
   async function showApproveDialog() {
@@ -117,7 +156,10 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
 
     try {
       await editObject(object.id, data);
-      // actualiza el formulario
+      for (const photoId of removedPhotoIds) {
+        await removePhoto(object.id, photoId);
+      }
+      await addPhotos(object.id, newPhotos);
       onSaved?.();
     } catch (error) {
       setFormError(error.message);
@@ -137,6 +179,69 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
         <h2>Detalles del objeto</h2>
         <p>ID del objeto: {object.id}</p>
 
+        <section
+          className="object-details-modal__photos"
+          aria-label="Fotografías del objeto"
+        >
+          <h3>Fotografías</h3>
+          <label className="object-details-modal__photo-input">
+            Agregar fotografías
+            <input
+              type="file"
+              accept="image/jpeg,image/png"
+              multiple
+              onChange={handlePhotoSelection}
+              disabled={busy}
+            />
+          </label>
+          {visiblePhotos.length || newPhotos.length ? (
+            <div className="object-details-modal__photo-grid">
+              {visiblePhotos.map((photo) => (
+                <div
+                  className="object-details-modal__photo-item"
+                  key={photo.id}
+                >
+                  <ProtectedPhoto
+                    objectId={object.id}
+                    photoId={photo.id}
+                    alt={`Fotografía de ${formatCategory(object.categoria)}`}
+                  />
+                  <button
+                    type="button"
+                    className="object-details-modal__remove-photo"
+                    onClick={() => markPhotoForRemoval(photo.id)}
+                    disabled={busy}
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
+              {newPhotos.map((photo, index) => (
+                <div
+                  className="object-details-modal__photo-item"
+                  key={photo.name + photo.lastModified}
+                >
+                  <span className="object-details-modal__new-photo">
+                    {photo.name}
+                  </span>
+                  <button
+                    type="button"
+                    className="object-details-modal__remove-photo"
+                    onClick={() => removeNewPhoto(index)}
+                    disabled={busy}
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="object-details-modal__no-photos">
+              Este objeto no tiene fotografías.
+            </p>
+          )}
+        </section>
+
         {optionsError && (
           <p className="object-details-modal__error">{optionsError}</p>
         )}
@@ -149,6 +254,9 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
         {deleteError && !formError && (
           <p className="object-details-modal__error">{deleteError}</p>
         )}
+        {photosError && !formError && (
+          <p className="object-details-modal__error">{photosError}</p>
+        )}
 
         <form onSubmit={showSaveDialog}>
           <label>
@@ -157,7 +265,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               name="categoria"
               value={form.categoria}
               onChange={handleChange}
-              disabled={optionsLoading || saving || deleting}
+              disabled={optionsLoading || busy}
               required
             >
               <option value="">Selecciona una categoría</option>
@@ -177,7 +285,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
                   name="titularRut"
                   value={form.titularRut}
                   onChange={handleChange}
-                  disabled={saving || deleting}
+                  disabled={busy}
                   placeholder="xx.xxx.xxx-x"
                 />
               </label>
@@ -188,7 +296,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
                   name="titularNombre"
                   value={form.titularNombre}
                   onChange={handleChange}
-                  disabled={saving || deleting}
+                  disabled={busy}
                 />
               </label>
             </>
@@ -200,7 +308,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               name="descripcion"
               value={form.descripcion}
               onChange={handleChange}
-              disabled={saving || deleting}
+              disabled={busy}
               required
               minLength={3}
               maxLength={500}
@@ -213,7 +321,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               name="lugarHallazgo"
               value={form.lugarHallazgo}
               onChange={handleChange}
-              disabled={saving || deleting}
+              disabled={busy}
               required
               minLength={3}
               maxLength={200}
@@ -226,7 +334,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
               name="puntoId"
               value={form.puntoId}
               onChange={handleChange}
-              disabled={optionsLoading || saving || deleting}
+              disabled={optionsLoading || busy}
               required
             >
               <option value="">Selecciona un punto</option>
@@ -239,17 +347,10 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
           </label>
 
           <div className="object-details-modal__actions">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={saving || deleting}
-            >
+            <button type="button" onClick={onClose} disabled={busy}>
               Cerrar
             </button>
-            <button
-              type="submit"
-              disabled={optionsLoading || saving || deleting}
-            >
+            <button type="submit" disabled={optionsLoading || busy}>
               {saving ? "Guardando..." : "Guardar cambios"}
             </button>
             {canApproveOrDelete && (
@@ -258,7 +359,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
                   type="button"
                   onClick={showApproveDialog}
                   className="object-details-modal__approve-button"
-                  disabled={saving || deleting}
+                  disabled={busy}
                 >
                   Aprobar
                 </button>
@@ -266,7 +367,7 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
                   type="button"
                   onClick={showDeleteDialog}
                   className="object-details-modal__delete-button"
-                  disabled={saving || deleting}
+                  disabled={busy}
                 >
                   {deleting ? "Eliminando..." : "Eliminar"}
                 </button>

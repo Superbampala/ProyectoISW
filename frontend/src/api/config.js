@@ -8,3 +8,16 @@ export const API_URL =
       ? `${window.location.origin}/api`
       : `http://${window.location.hostname}:3000/api`
     : "http://localhost:3000/api");
+
+export function getSession() {
+  try {
+    return JSON.parse(localStorage.getItem("ubb-session") || "null");
+  } catch {
+    return null;
+  }
+}
+
+export function getAuthHeaders() {
+  const token = getSession()?.token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
