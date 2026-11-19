@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { API_URL } from "../../api/config";
 import "./auth.css";
 
@@ -18,24 +18,29 @@ function getErrorMessage(data, fallback) {
 export default function AuthPage({ initialMessage = "", onAuthenticated }) {
   const searchParams = new URLSearchParams(window.location.search);
   const verificationToken = searchParams.get("token");
-  const [mode, setMode] = useState(verificationToken ? "verify" : "login");
+  const resetToken = searchParams.get("resetToken");
+
+  const [mode, setMode] = useState(
+    resetToken ? "reset" : verificationToken ? "verify" : "login",
+  );
   const [login, setLogin] = useState({ correo: "", password: "" });
   const [registration, setRegistration] = useState(initialRegistration);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetPasswordConfirmation, setResetPasswordConfirmation] = useState("");
   const [message, setMessage] = useState(
-    verificationToken
-      ? "Correo verificado, ya puedes iniciar sesión."
-      : initialMessage,
+    initialMessage,
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [verificationExpired, setVerificationExpired] = useState(false);
   const [resendOpen, setResendOpen] = useState(false);
   const [resendEmail, setResendEmail] = useState("");
-  const verificationStarted = useRef(false);
 
+  // VERIFICA AUTOMATICAMENTE EL TOKEN QUE VIENE EN EL ENLACE DEL CORREO
   useEffect(() => {
-    if (!verificationToken || verificationStarted.current) return;
-    verificationStarted.current = true;
+    if (!verificationToken) return;
 
     let active = true;
     const controller = new AbortController();
@@ -51,15 +56,22 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
         const data = await response.json();
         if (!response.ok) {
           if (active) {
-            setVerificationExpired(data.code === "TOKEN_EXPIRED");
+            setVerificationExpired(true);
+            setResendOpen(true);
             setMessage("");
             setError(getErrorMessage(data, "No fue posible verificar el correo."));
           }
           return;
         }
-        if (active) setMessage(data.message);
+        if (active) {
+          setVerificationExpired(false);
+          setResendOpen(false);
+          setMessage(data.message);
+        }
       } catch (requestError) {
         if (active) {
+          setVerificationExpired(true);
+          setResendOpen(true);
           setError(
             requestError.name === "AbortError"
               ? "La verificación tardó demasiado. Solicita un nuevo correo e inténtalo nuevamente."
@@ -80,13 +92,18 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     };
   }, [verificationToken]);
 
+  // CAMBIA ENTRE LOGIN, REGISTRO Y VERIFICACION
   const changeMode = (nextMode) => {
+    if (nextMode === "login" && resetToken) {
+      window.history.replaceState({}, "", "/");
+    }
     setMode(nextMode);
     setLoading(false);
     setMessage("");
     setError("");
   };
 
+  // ENVIA CORREO Y CONTRASEÑA PARA INICIAR SESION
   const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -116,6 +133,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     }
   };
 
+  // CREA UNA CUENTA Y ESPERA LA VERIFICACION POR CORREO
   const handleRegistration = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -141,6 +159,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     }
   };
 
+  // SOLICITA UN NUEVO ENLACE DE VERIFICACION
   const handleResend = async (event) => {
     event?.preventDefault();
     if (!resendEmail.trim()) {
@@ -172,11 +191,86 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     }
   };
 
+  const handlePasswordRecovery = async (event) => {
+    event?.preventDefault();
+    if (!recoveryEmail.trim()) {
+      setError("Ingresa el correo de la cuenta.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch(
+        `${API_URL}/autenticacion/recuperar-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ correo: recoveryEmail }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        setError(getErrorMessage(data, "No fue posible solicitar la recuperación."));
+        return;
+      }
+      setMessage(data.message);
+      setRecoveryOpen(false);
+    } catch {
+      setError("No fue posible conectar con el servidor.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (event) => {
+    event.preventDefault();
+
+    if (resetPassword !== resetPasswordConfirmation) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch(
+        `${API_URL}/autenticacion/restablecer-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: resetToken,
+            password: resetPassword,
+          }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        setError(getErrorMessage(data, "No fue posible restablecer la contraseña."));
+        return;
+      }
+
+      window.history.replaceState({}, "", "/");
+      setResetPassword("");
+      setResetPasswordConfirmation("");
+      setMode("login");
+      setMessage("Contraseña actualizada");
+    } catch {
+      setError("No fue posible conectar con el servidor.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (mode === "verify") {
     return (
       <main className="auth">
         <section className="auth__card" aria-live="polite">
           <h1 className="auth__title">Verificación de correo</h1>
+          {loading && <p className="auth__message">Verificando correo...</p>}
           {message && <p className="auth__message">{message}</p>}
           {error && <p className="auth__message auth__message--error">{error}</p>}
           <div className="auth__success-actions">
@@ -187,17 +281,12 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
                   <input
                     id="resend-email"
                     type="email"
-                    value={login.correo}
-                    onChange={(event) =>
-                      setLogin((current) => ({ ...current, correo: event.target.value }))
-                    }
+                    value={resendEmail}
+                    onChange={(event) => setResendEmail(event.target.value)}
                   />
                 </label>
-                <button className="auth__button" type="button" onClick={() => {
-                  setResendEmail(login.correo);
-                  setResendOpen(true);
-                }} disabled={loading}>
-                  Reenviar correo de verificación
+                <button className="auth__button" type="button" onClick={handleResend} disabled={loading}>
+                  {loading ? "Enviando..." : "Reenviar correo de verificación"}
                 </button>
               </>
             )}
@@ -205,6 +294,54 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
               Ir al inicio de sesión
             </button>
           </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (mode === "reset") {
+    return (
+      <main className="auth">
+        <section className="auth__card">
+          <h1 className="auth__title">Restablecer contraseña</h1>
+          {message && <p className="auth__message">{message}</p>}
+          {error && <p className="auth__message auth__message--error">{error}</p>}
+          <form className="auth__form" onSubmit={handleResetPassword}>
+            <label className="auth__field">
+              Nueva contraseña
+              <input
+                required
+                minLength="8"
+                type="password"
+                autoComplete="new-password"
+                value={resetPassword}
+                onChange={(event) => setResetPassword(event.target.value)}
+              />
+            </label>
+            <label className="auth__field">
+              Confirmar contraseña
+              <input
+                required
+                minLength="8"
+                type="password"
+                autoComplete="new-password"
+                value={resetPasswordConfirmation}
+                onChange={(event) =>
+                  setResetPasswordConfirmation(event.target.value)
+                }
+              />
+            </label>
+            <button className="auth__button" type="submit" disabled={loading}>
+              {loading ? "Actualizando..." : "Actualizar contraseña"}
+            </button>
+          </form>
+          <button
+            className="auth__link"
+            type="button"
+            onClick={() => changeMode("login")}
+          >
+            Volver al inicio de sesión
+          </button>
         </section>
       </main>
     );
@@ -277,7 +414,6 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
                   Correo de la cuenta
                   <input
                     id="login-resend-email"
-                    required
                     type="email"
                     value={resendEmail}
                     onChange={(event) => setResendEmail(event.target.value)}
@@ -285,6 +421,42 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
                 </label>
                 <button className="auth__button" type="button" onClick={handleResend} disabled={loading}>
                   {loading ? "Enviando..." : "Enviar correo"}
+                </button>
+              </div>
+            )}
+            <button
+              className="auth__button auth__button--secondary"
+              type="button"
+              onClick={() => {
+                setError("");
+                setMessage("");
+                setRecoveryEmail(login.correo);
+                setRecoveryOpen((current) => !current);
+              }}
+              disabled={loading}
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+            {recoveryOpen && (
+              <div className="auth__resend">
+                <label className="auth__field" htmlFor="password-recovery-email">
+                  Correo de la cuenta
+                  <input
+                    id="password-recovery-email"
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={(event) =>
+                      setRecoveryEmail(event.target.value)
+                    }
+                  />
+                </label>
+                <button
+                  className="auth__button"
+                  type="button"
+                  onClick={handlePasswordRecovery}
+                  disabled={loading}
+                >
+                  {loading ? "Enviando..." : "Enviar enlace"}
                 </button>
               </div>
             )}

@@ -1,5 +1,6 @@
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
 
+// DEFINE LA URL BASE QUE USAN LAS PANTALLAS DE AUTENTICACION
 export const API_URL =
   configuredApiUrl ||
   (typeof window !== "undefined"

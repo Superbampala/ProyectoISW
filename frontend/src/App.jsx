@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
+import { API_URL, getAuthHeaders } from "./api/config";
 
 import AuthPage from "./components/auth/AuthPage";
 import MainMenu from "./components/mainMenu/mainMenu";
@@ -7,16 +8,19 @@ import ObjectForm from "./components/objectForm/objectForm";
 import PendingObjectsBoard from "./components/pending/pendingObjectsBoard/pendingObjectsBoard";
 import ApprovedObjectsBoard from "./components/approved/approvedObjectBoard/approvedObjectBoard";
 import TimeConfiguration from "./components/timeConfiguration/timeConfiguration";
+import UserAdminBoard from "./components/userAdmin/userAdminBoard";
 
 function App() {
   const [view, setView] = useState("menu");
   const [authMessage, setAuthMessage] = useState("");
+  
+  // RECUPERA LA SESION LOCAL Y RECHAZA TOKENS AUSENTES O VENCIDOS
   const [user, setUser] = useState(() => {
     try {
       const session = JSON.parse(localStorage.getItem("ubb-session") || "null");
-      const payload = session?.token?.split(".")[0];
+      const payload = session?.token?.split(".")[1];
       const expiresAt = payload
-        ? JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))).exp
+        ? JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))).exp * 1000
         : 0;
 
       if (!session?.usuario || !session?.token || expiresAt <= Date.now()) {
@@ -31,7 +35,37 @@ function App() {
     }
   });
 
+  useEffect(() => {
+    if (!user) return;
+
+    const controller = new AbortController();
+
+    fetch(`${API_URL}/autenticacion/perfil`, {
+      headers: getAuthHeaders(),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          localStorage.removeItem("ubb-session");
+          setUser(null);
+          setView("menu");
+          setAuthMessage("La sesión no es válida o ha expirado");
+          return;
+        }
+        setUser(data.usuario);
+      })
+      .catch((requestError) => {
+        if (requestError.name !== "AbortError") {
+          setAuthMessage("No fue posible validar la sesión");
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
+
   if (!user) {
+    // SIN SESION, LA APLICACION SOLO MUESTRA LAS PANTALLAS DE AUTH
     return (
       <AuthPage
         initialMessage={authMessage}
@@ -44,6 +78,7 @@ function App() {
   }
 
   if (view === "form") {
+    if (user.rol !== "USUARIO_UBB") return null;
     return <ObjectForm onBack={() => setView("menu")} />;
   }
 
@@ -60,29 +95,41 @@ function App() {
     return <PendingObjectsBoard onBack={() => setView("menu")} />;
   }
 
-  if (view === "settings") {
-    return (
-      <TimeConfiguration
-        userId={user.id}
-        userRole={user.rol}
-        onBack={() => setView("menu")}
-      />
-    );
+  if (view === "users") {
+    if (user.rol !== "ADMIN_SISTEMA") return null;
+    return <UserAdminBoard onBack={() => setView("menu")} />;
   }
 
+  // ELIMINA LA SESION LOCAL Y REGRESA AL LOGIN
   return (
     <MainMenu
       user={user}
       onLogout={() => {
-        localStorage.removeItem("ubb-session");
-        setUser(null);
-        setView("menu");
-        setAuthMessage("Sesión cerrada");
+        fetch(`${API_URL}/autenticacion/logout`, {
+          method: "POST",
+          headers: getAuthHeaders(),
+        })
+          .then(async (response) => {
+            const data = await response.json();
+            if (!response.ok) {
+              setAuthMessage(
+                data.message || "No fue posible cerrar la sesión",
+              );
+              return;
+            }
+            localStorage.removeItem("ubb-session");
+            setUser(null);
+            setView("menu");
+            setAuthMessage("Sesión cerrada");
+          })
+          .catch(() => {
+            setAuthMessage("No fue posible conectar con el servidor");
+          });
       }}
       onViewApprovedObjects={() => setView("approved")}
       onViewPendingObjects={() => setView("pending")}
       onRegisterObject={() => setView("form")}
-      onOpenSettings={() => setView("settings")}
+      onManageUsers={() => setView("users")}
     />
   );
 }

@@ -32,6 +32,7 @@ export const registroSchema = z.object({
   })
 });
 
+// VALIDA EL TOKEN RECIBIDO EN EL ENLACE DE VERIFICACION
 export const verificarCorreoSchema = z.object({
   query: z.object({
     token: z
@@ -52,6 +53,29 @@ export const reenviarVerificacionSchema = z.object({
   })
 });
 
+export const solicitarRecuperacionSchema = z.object({
+  body: z.object({
+    correo: z
+      .string({ required_error: 'El correo es obligatorio' })
+      .trim()
+      .email('Debe ser un correo electrónico válido')
+      .toLowerCase()
+  })
+});
+
+export const restablecerPasswordSchema = z.object({
+  body: z.object({
+    token: z
+      .string({ required_error: 'El token es obligatorio' })
+      .trim()
+      .min(1, 'El token no puede estar vacío'),
+    password: z
+      .string({ required_error: 'La contraseña es obligatoria' })
+      .min(8, 'La contraseña debe tener al menos 8 caracteres')
+  })
+});
+
+// VALIDA LAS CREDENCIALES DEL INICIO DE SESION
 export const inicioSesionSchema = z.object({
   body: z.object({
     correo: z
@@ -65,6 +89,7 @@ export const inicioSesionSchema = z.object({
   })
 });
 
+// VALIDA LOS ROLES QUE PUEDE ASIGNAR EL ADMINISTRADOR DEL SISTEMA
 export const actualizarRolSchema = z.object({
   params: z.object({
     id: z.coerce.number().int().positive('El ID debe ser mayor a 0')

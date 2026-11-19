@@ -44,10 +44,13 @@ model Usuario {
   passwordHash String @map("password_hash")
   rol          Rol
 
-  // Estado y Verificación de Cuenta
+  // ESTADO DE LA CUENTA Y DATOS DEL ENLACE DE VERIFICACION
   habilitado        Boolean   @default(false)
   tokenVerificacion String?   @unique @map("token_verificacion")
   expiracionToken   DateTime? @map("expiracion_token")
+  versionSesion     Int       @default(0) @map("version_sesion")
+  tokenRecuperacion String?   @unique @map("token_recuperacion")
+  expiracionRecuperacion DateTime? @map("expiracion_recuperacion")
 
   // Registra: un usuario halla/registra 0..N objetos; cada objeto tiene 1 hallador
   objetosRegistrados Objeto[]                 @relation("Hallador")

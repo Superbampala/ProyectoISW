@@ -9,9 +9,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-/**
- * Envía el correo de verificación al usuario
- */
+// ENVIA EL ENLACE PARA VERIFICAR EL CORREO
 export const enviarCorreoVerificacion = async (correoDestino, enlace) => {
   const mailOptions = {
     from: `"Sistema UBB" <${process.env.EMAIL_USER}>`,
@@ -24,6 +22,24 @@ export const enviarCorreoVerificacion = async (correoDestino, enlace) => {
         Verificar mi correo
       </a>
       <p>Este enlace expirará en 24 horas.</p>
+    `
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+export const enviarCorreoRecuperacion = async (correoDestino, enlace) => {
+  const mailOptions = {
+    from: `"Sistema UBB" <${process.env.EMAIL_USER}>`,
+    to: correoDestino,
+    subject: 'Restablece tu contraseña',
+    html: `
+      <h2>Recuperación de contraseña</h2>
+      <p>Solicitaste restablecer tu contraseña. Usa el siguiente enlace:</p>
+      <a href="${enlace}" style="padding: 10px 15px; background-color: #0056b3; color: white; text-decoration: none; border-radius: 5px;">
+        Restablecer contraseña
+      </a>
+      <p>Este enlace expirará en 1 hora y solo puede usarse una vez.</p>
     `
   };
 

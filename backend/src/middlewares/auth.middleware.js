@@ -1,4 +1,4 @@
-import crypto from 'node:crypto';
+import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
 
 const ROLES_ADMINISTRATIVOS = ['ADMIN_SISTEMA'];
@@ -10,35 +10,16 @@ const obtenerToken = (req) => {
 };
 
 const verificarToken = (token) => {
-  const secreto = process.env.SESSION_SECRET;
+  const secreto = process.env.JWT_SECRET || process.env.SESSION_SECRET;
   if (!secreto || !token) return null;
-
-  const [payload, firma] = token.split('.');
-  if (!payload || !firma) return null;
-
-  const firmaEsperada = crypto
-    .createHmac('sha256', secreto)
-    .update(payload)
-    .digest('base64url');
-
-  if (
-    firma.length !== firmaEsperada.length ||
-    !crypto.timingSafeEqual(Buffer.from(firma), Buffer.from(firmaEsperada))
-  ) {
-    return null;
-  }
-
   try {
-    const datos = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-    if (!Number.isInteger(datos.sub) || !Number.isFinite(datos.exp) || datos.exp <= Date.now()) {
-      return null;
-    }
-    return datos;
+    return jwt.verify(token, secreto);
   } catch {
     return null;
   }
 };
 
+// VERIFICA LA SESION Y CARGA EL USUARIO ACTUAL EN req.user
 export const autenticarSesion = async (req, res, next) => {
   const datos = verificarToken(obtenerToken(req));
   if (!datos) {
@@ -48,9 +29,24 @@ export const autenticarSesion = async (req, res, next) => {
     });
   }
 
+  const usuarioId = Number(datos.sub ?? datos.id);
+  if (!Number.isInteger(usuarioId)) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'La sesión no es válida o ha expirado.'
+    });
+  }
+
   const usuario = await prisma.usuario.findUnique({
-    where: { id: datos.sub },
-    select: { id: true, nombre: true, correo: true, rol: true, habilitado: true }
+    where: { id: usuarioId },
+    select: {
+      id: true,
+      nombre: true,
+      correo: true,
+      rol: true,
+      habilitado: true,
+      versionSesion: true
+    }
   });
 
   if (!usuario || !usuario.habilitado) {
@@ -60,15 +56,27 @@ export const autenticarSesion = async (req, res, next) => {
     });
   }
 
-  req.user = usuario;
+  if (
+    typeof datos.versionSesion !== 'number' ||
+    datos.versionSesion !== usuario.versionSesion
+  ) {
+    return res.status(401).json({
+      status: 'fail',
+      message: 'La sesión no es válida o ha expirado.'
+    });
+  }
+
+  const { versionSesion, ...usuarioPublico } = usuario;
+  req.user = usuarioPublico;
   next();
 };
 
+// COMPRUEBA QUE EL USUARIO TENGA UNO DE LOS ROLES PERMITIDOS
 export const exigirRol = (...roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.rol)) {
     return res.status(403).json({
       status: 'fail',
-      message: 'No tienes permisos para realizar esta acción.'
+      message: 'No tienes permiso para realizar esta acción'
     });
   }
   next();

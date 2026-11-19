@@ -14,11 +14,11 @@ export default function MainMenu({
   onViewApprovedObjects = () => {},
   onViewPendingObjects = () => {},
   onRegisterObject = () => {},
-  onOpenSettings = () => {},
+  onManageUsers = () => {},
 }) {
-  const pendingObjectsTitle =
-    user.rol === "USUARIO_UBB" ? "Mis objetos pendientes" : "Objetos pendientes";
-  const canManageSettings = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(user.rol);
+  const isUser = user.rol === "USUARIO_UBB";
+  const isSystemAdmin = user.rol === "ADMIN_SISTEMA";
+  const pendingObjectsTitle = isUser ? "Mis objetos pendientes" : "Objetos pendientes";
 
   return (
     <div className="menu">
@@ -81,16 +81,35 @@ export default function MainMenu({
             </span>
             <ArrowIcon />
           </button>
+
+          {isSystemAdmin && (
+            <button
+              className="menu__card"
+              type="button"
+              onClick={onManageUsers}
+            >
+              <span className="menu__card-icon">
+                <SearchIcon />
+              </span>
+              <span className="menu__card-copy">
+                <strong>Administración de usuarios</strong>
+                <span>Consultar usuarios y cambiar sus roles</span>
+              </span>
+              <ArrowIcon />
+            </button>
+          )}
         </div>
 
-        <button
-          className="menu__create"
-          type="button"
-          onClick={onRegisterObject}
-          aria-label="Encontré un objeto"
-        >
-          <PlusIcon />
-        </button>
+        {isUser && (
+          <button
+            className="menu__create"
+            type="button"
+            onClick={onRegisterObject}
+            aria-label="Encontré un objeto"
+          >
+            <PlusIcon />
+          </button>
+        )}
       </main>
     </div>
   );
