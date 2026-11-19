@@ -7,6 +7,7 @@ import MainMenu from "./components/mainMenu/mainMenu";
 import ObjectForm from "./components/objectForm/objectForm";
 import PendingObjectsBoard from "./components/pending/pendingObjectsBoard/pendingObjectsBoard";
 import ApprovedObjectsBoard from "./components/approved/approvedObjectBoard/approvedObjectBoard";
+import UserAdminBoard from "./components/userAdmin/userAdminBoard";
 
 function App() {
   const [view, setView] = useState("menu");
@@ -76,6 +77,7 @@ function App() {
   }
 
   if (view === "form") {
+    if (user.rol !== "USUARIO_UBB") return null;
     return <ObjectForm onBack={() => setView("menu")} />;
   }
 
@@ -85,6 +87,11 @@ function App() {
 
   if (view === "pending") {
     return <PendingObjectsBoard onBack={() => setView("menu")} />;
+  }
+
+  if (view === "users") {
+    if (user.rol !== "ADMIN_SISTEMA") return null;
+    return <UserAdminBoard onBack={() => setView("menu")} />;
   }
 
   // ELIMINA LA SESION LOCAL Y REGRESA AL LOGIN
@@ -116,6 +123,7 @@ function App() {
       onViewApprovedObjects={() => setView("approved")}
       onViewPendingObjects={() => setView("pending")}
       onRegisterObject={() => setView("form")}
+      onManageUsers={() => setView("users")}
     />
   );
 }
