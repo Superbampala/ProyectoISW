@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { API_URL } from "../../api/config";
 import "./auth.css";
 
@@ -37,12 +37,10 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
   const [verificationExpired, setVerificationExpired] = useState(false);
   const [resendOpen, setResendOpen] = useState(false);
   const [resendEmail, setResendEmail] = useState("");
-  const verificationStarted = useRef(false);
 
   // VERIFICA AUTOMATICAMENTE EL TOKEN QUE VIENE EN EL ENLACE DEL CORREO
   useEffect(() => {
-    if (!verificationToken || verificationStarted.current) return;
-    verificationStarted.current = true;
+    if (!verificationToken) return;
 
     let active = true;
     const controller = new AbortController();
@@ -72,6 +70,8 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
         }
       } catch (requestError) {
         if (active) {
+          setVerificationExpired(true);
+          setResendOpen(true);
           setError(
             requestError.name === "AbortError"
               ? "La verificación tardó demasiado. Solicita un nuevo correo e inténtalo nuevamente."
@@ -270,6 +270,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
       <main className="auth">
         <section className="auth__card" aria-live="polite">
           <h1 className="auth__title">Verificación de correo</h1>
+          {loading && <p className="auth__message">Verificando correo...</p>}
           {message && <p className="auth__message">{message}</p>}
           {error && <p className="auth__message auth__message--error">{error}</p>}
           <div className="auth__success-actions">
