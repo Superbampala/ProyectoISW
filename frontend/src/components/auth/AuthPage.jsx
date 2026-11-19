@@ -30,9 +30,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
   const [resetPassword, setResetPassword] = useState("");
   const [resetPasswordConfirmation, setResetPasswordConfirmation] = useState("");
   const [message, setMessage] = useState(
-    verificationToken
-      ? "Correo verificado, ya puedes iniciar sesión."
-      : initialMessage,
+    initialMessage,
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,13 +58,18 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
         const data = await response.json();
         if (!response.ok) {
           if (active) {
-            setVerificationExpired(data.code === "TOKEN_EXPIRED");
+            setVerificationExpired(true);
+            setResendOpen(true);
             setMessage("");
             setError(getErrorMessage(data, "No fue posible verificar el correo."));
           }
           return;
         }
-        if (active) setMessage(data.message);
+        if (active) {
+          setVerificationExpired(false);
+          setResendOpen(false);
+          setMessage(data.message);
+        }
       } catch (requestError) {
         if (active) {
           setError(
@@ -277,17 +280,12 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
                   <input
                     id="resend-email"
                     type="email"
-                    value={login.correo}
-                    onChange={(event) =>
-                      setLogin((current) => ({ ...current, correo: event.target.value }))
-                    }
+                    value={resendEmail}
+                    onChange={(event) => setResendEmail(event.target.value)}
                   />
                 </label>
-                <button className="auth__button" type="button" onClick={() => {
-                  setResendEmail(login.correo);
-                  setResendOpen(true);
-                }} disabled={loading}>
-                  Reenviar correo de verificación
+                <button className="auth__button" type="button" onClick={handleResend} disabled={loading}>
+                  {loading ? "Enviando..." : "Reenviar correo de verificación"}
                 </button>
               </>
             )}
