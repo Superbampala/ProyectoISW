@@ -15,9 +15,12 @@ export default function MainMenu({
   onViewPendingObjects = () => {},
   onRegisterObject = () => {},
   onManageUsers = () => {},
+  onOpenSettings = () => {},
 }) {
   const isUser = user.rol === "USUARIO_UBB";
   const isSystemAdmin = user.rol === "ADMIN_SISTEMA";
+  const canManageSettings =
+    isSystemAdmin || user.rol === "ADMIN_PUNTO";
   const pendingObjectsTitle = isUser ? "Mis objetos pendientes" : "Objetos pendientes";
 
   return (

@@ -143,6 +143,7 @@ function App() {
               onViewPendingObjects={() => navigate("/pendientes")}
               onRegisterObject={() => navigate("/registrar-objeto")}
               onManageUsers={() => navigate("/usuarios")}
+              onOpenSettings={() => navigate("/configuracion-hora")}
             />
           </ProtectedRoute>
         }
@@ -179,6 +180,21 @@ function App() {
         element={
           <ProtectedRoute user={user} allowedRoles={["ADMIN_SISTEMA"]}>
             <UserAdminBoard onBack={() => navigate("/menu")} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracion-hora"
+        element={
+          <ProtectedRoute
+            user={user}
+            allowedRoles={["ADMIN_PUNTO", "ADMIN_SISTEMA"]}
+          >
+            <TimeConfiguration
+              userId={user?.id}
+              userRole={user?.rol}
+              onBack={() => navigate("/menu")}
+            />
           </ProtectedRoute>
         }
       />
