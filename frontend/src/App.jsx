@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { API_URL, getAuthHeaders } from "./api/config";
 
 import AuthPage from "./components/auth/AuthPage";
@@ -9,9 +10,19 @@ import PendingObjectsBoard from "./components/pending/pendingObjectsBoard/pendin
 import ApprovedObjectsBoard from "./components/approved/approvedObjectBoard/approvedObjectBoard";
 import UserAdminBoard from "./components/userAdmin/userAdminBoard";
 
+function ProtectedRoute({ user, allowedRoles, children }) {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  if (allowedRoles && !allowedRoles.includes(user.rol)) {
+    return <Navigate to="/menu" replace />;
+  }
+  return children;
+}
+
 function App() {
-  const [view, setView] = useState("menu");
   const [authMessage, setAuthMessage] = useState("");
+  const navigate = useNavigate();
   
   // RECUPERA LA SESION LOCAL Y RECHAZA TOKENS AUSENTES O VENCIDOS
   const [user, setUser] = useState(() => {
@@ -48,8 +59,8 @@ function App() {
         if (!response.ok) {
           localStorage.removeItem("ubb-session");
           setUser(null);
-          setView("menu");
           setAuthMessage("La sesión no es válida o ha expirado");
+          navigate("/login", { replace: true });
           return;
         }
         setUser(data.usuario);
@@ -61,70 +72,125 @@ function App() {
       });
 
     return () => controller.abort();
-  }, []);
+  }, [navigate]);
 
-  if (!user) {
-    // SIN SESION, LA APLICACION SOLO MUESTRA LAS PANTALLAS DE AUTH
-    return (
-      <AuthPage
-        initialMessage={authMessage}
-        onAuthenticated={(authenticatedUser) => {
-          setAuthMessage("");
-          setUser(authenticatedUser);
-        }}
-      />
-    );
-  }
+  const handleLogout = () => {
+    fetch(`${API_URL}/autenticacion/logout`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) {
+          setAuthMessage(data.message || "No fue posible cerrar la sesión");
+          return;
+        }
+        localStorage.removeItem("ubb-session");
+        setUser(null);
+        setAuthMessage("Sesión cerrada");
+        navigate("/login", { replace: true });
+      })
+      .catch(() => {
+        setAuthMessage("No fue posible conectar con el servidor");
+      });
+  };
 
-  if (view === "form") {
-    if (user.rol !== "USUARIO_UBB") return null;
-    return <ObjectForm onBack={() => setView("menu")} />;
-  }
-
-  if (view === "approved") {
-    return <ApprovedObjectsBoard onBack={() => setView("menu")} />;
-  }
-
-  if (view === "pending") {
-    return <PendingObjectsBoard onBack={() => setView("menu")} />;
-  }
-
-  if (view === "users") {
-    if (user.rol !== "ADMIN_SISTEMA") return null;
-    return <UserAdminBoard onBack={() => setView("menu")} />;
-  }
-
-  // ELIMINA LA SESION LOCAL Y REGRESA AL LOGIN
   return (
-    <MainMenu
-      user={user}
-      onLogout={() => {
-        fetch(`${API_URL}/autenticacion/logout`, {
-          method: "POST",
-          headers: getAuthHeaders(),
-        })
-          .then(async (response) => {
-            const data = await response.json();
-            if (!response.ok) {
-              setAuthMessage(
-                data.message || "No fue posible cerrar la sesión",
-              );
-              return;
-            }
-            localStorage.removeItem("ubb-session");
-            setUser(null);
-            setView("menu");
-            setAuthMessage("Sesión cerrada");
-          })
-          .catch(() => {
-            setAuthMessage("No fue posible conectar con el servidor");
-          });
-      }}
-      onViewApprovedObjects={() => setView("approved")}
-      onViewPendingObjects={() => setView("pending")}
-      onRegisterObject={() => setView("form")}
-      onManageUsers={() => setView("users")}
-    />
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          user ? (
+            <Navigate to="/menu" replace />
+          ) : (
+            <AuthPage
+              initialMessage={authMessage}
+              onAuthenticated={(authenticatedUser) => {
+                setAuthMessage("");
+                setUser(authenticatedUser);
+                navigate("/menu", { replace: true });
+              }}
+            />
+          )
+        }
+      />
+      <Route
+        path="/verificar-correo"
+        element={<AuthPage initialMessage={authMessage} />}
+      />
+      <Route
+        path="/"
+        element={
+          window.location.search.includes("resetToken=") ? (
+            <AuthPage initialMessage={authMessage} />
+          ) : user ? (
+            <Navigate to="/menu" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route
+        path="/menu"
+        element={
+          <ProtectedRoute user={user}>
+            <MainMenu
+              user={user}
+              onLogout={handleLogout}
+              onViewApprovedObjects={() => navigate("/objetos-aprobados")}
+              onViewPendingObjects={() => navigate("/pendientes")}
+              onRegisterObject={() => navigate("/registrar-objeto")}
+              onManageUsers={() => navigate("/usuarios")}
+            />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/registrar-objeto"
+        element={
+          <ProtectedRoute user={user} allowedRoles={["USUARIO_UBB"]}>
+            <ObjectForm onBack={() => navigate("/menu")} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/objetos-aprobados"
+        element={
+          <ProtectedRoute user={user}>
+            <ApprovedObjectsBoard onBack={() => navigate("/menu")} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pendientes"
+        element={
+          <ProtectedRoute
+            user={user}
+            allowedRoles={["USUARIO_UBB", "ADMIN_PUNTO", "ADMIN_SISTEMA"]}
+          >
+            <PendingObjectsBoard onBack={() => navigate("/menu")} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/usuarios"
+        element={
+          <ProtectedRoute user={user} allowedRoles={["ADMIN_SISTEMA"]}>
+            <UserAdminBoard onBack={() => navigate("/menu")} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="*"
+        element={
+          user ? (
+            <Navigate to="/menu" replace />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+    </Routes>
   );
 }
 
