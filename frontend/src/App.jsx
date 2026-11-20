@@ -96,29 +96,6 @@ function App() {
       });
   };
 
-  if (view === "form") {
-    if (user.rol !== "USUARIO_UBB") return null;
-    return <ObjectForm onBack={() => setView("menu")} />;
-  }
-
-  if (view === "approved") {
-    return (
-      <ApprovedObjectsBoard
-        userRole={user.rol}
-        onBack={() => setView("menu")}
-      />
-    );
-  }
-
-  if (view === "pending") {
-    return <PendingObjectsBoard onBack={() => setView("menu")} />;
-  }
-
-  if (view === "users") {
-    if (user.rol !== "ADMIN_SISTEMA") return null;
-    return <UserAdminBoard onBack={() => setView("menu")} />;
-  }
-
   // ELIMINA LA SESION LOCAL Y REGRESA AL LOGIN
   return (
     <Routes>
