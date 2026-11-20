@@ -1,5 +1,13 @@
 import nodemailer from 'nodemailer';
 
+const escaparHtml = (valor) =>
+  String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
 // Configuración del transporter con Gmail
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -40,6 +48,31 @@ export const enviarCorreoRecuperacion = async (correoDestino, enlace) => {
         Restablecer contraseña
       </a>
       <p>Este enlace expirará en 1 hora y solo puede usarse una vez.</p>
+    `
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+export const enviarCorreoDocumentoDisponible = async (
+  correoDestino,
+  nombreTitular,
+  descripcionDocumento,
+  nombrePunto,
+) => {
+  const nombreSeguro = escaparHtml(nombreTitular);
+  const descripcionSegura = escaparHtml(descripcionDocumento);
+  const puntoSeguro = escaparHtml(nombrePunto);
+  const mailOptions = {
+    from: `"Sistema UBB" <${process.env.EMAIL_USER}>`,
+    to: correoDestino,
+    subject: 'Documento disponible para retirar',
+    html: `
+      <h2>Hola ${nombreSeguro}</h2>
+      <p>Se encontró un documento registrado a tu nombre y ya está disponible para retiro.</p>
+      <p><strong>Documento:</strong> ${descripcionSegura}</p>
+      ${nombrePunto ? `<p><strong>Punto de entrega:</strong> ${puntoSeguro}</p>` : ''}
+      <p>Acércate al punto de entrega correspondiente para continuar con el retiro.</p>
     `
   };
 

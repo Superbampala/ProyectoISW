@@ -190,7 +190,7 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
       setLoading(false);
     }
   };
-
+  //RECUPERAR CONTRASEÑA
   const handlePasswordRecovery = async (event) => {
     event?.preventDefault();
     if (!recoveryEmail.trim()) {
@@ -401,8 +401,8 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
               onClick={() => {
                 setError("");
                 setMessage("");
-                setResendEmail(login.correo);
-                setResendOpen(true);
+                setResendOpen((current) => !current);
+                if (!resendOpen) setResendEmail(login.correo);
               }}
               disabled={loading}
             >

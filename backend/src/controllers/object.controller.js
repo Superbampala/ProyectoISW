@@ -1,10 +1,23 @@
 import * as objectService from "../services/object.services.js";
+import prisma from "../config/prisma.js";
 import path from "node:path";
 import fs from "node:fs/promises";
 import { uploadDirectory } from "../middlewares/photo-upload.middleware.js";
 
 const deleteUploadedFiles = (files) =>
   Promise.all(files.map((file) => fs.unlink(file.path).catch(() => undefined)));
+
+const MENSAJE_SIN_PERMISO = "No tienes permiso para realizar esta acción";
+
+const administradorDePuntoAsignado = async (usuarioId, puntoId) =>
+  Boolean(await prisma.adminPuntoAsignacion.findUnique({
+    where: {
+      usuarioId_puntoId: {
+        usuarioId: Number(usuarioId),
+        puntoId: Number(puntoId),
+      },
+    },
+  }));
 
 export const getObjectOptions = async (req, res) => {
   try {
@@ -18,12 +31,6 @@ export const getObjectOptions = async (req, res) => {
 
 export const getAllPendingObjects = async (req, res) => {
   try {
-    if (!["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol)) {
-      return res.status(403).json({
-        error: "Solo los administradores pueden revisar pre-inscripciones",
-      });
-    }
-
     const pendingObjects = await objectService.getAllPendingObjects(
       req.query.page,
       req.query.limit,
@@ -34,6 +41,7 @@ export const getAllPendingObjects = async (req, res) => {
         desde: req.query.desde,
         hasta: req.query.hasta,
       },
+      //req.user,
     );
     res.status(200).json(pendingObjects);
   } catch (error) {
@@ -44,12 +52,6 @@ export const getAllPendingObjects = async (req, res) => {
 
 export const getPendingObjectsByUser = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({
-        error: "Se requiere autenticación para revisar pre-inscripciones",
-      });
-    }
-
     const pendingObjects = await objectService.getPendingObjectsByUser(
       req.user.id,
       req.query.page,
@@ -167,6 +169,15 @@ export const getObjectPhoto = async (req, res) => {
       return res.status(404).json({ error: "Fotografía no encontrada" });
     }
 
+    const isSystemAdmin = req.user?.rol === "ADMIN_SISTEMA";
+    const isPointAdmin =
+      req.user?.rol === "ADMIN_PUNTO" &&
+      await administradorDePuntoAsignado(req.user.id, photo.objeto.puntoId);
+    const isOwner = req.user?.id === photo.objeto.usuarioHalladorId;
+    if (!isSystemAdmin && !isPointAdmin && !isOwner) {
+      return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
+    }
+
     return res.sendFile(path.join(uploadDirectory, photo.urlArchivo));
   } catch (error) {
     console.error("Error al obtener la fotografía:", error);
@@ -190,18 +201,21 @@ export const uploadObjectPhotos = async (req, res) => {
       });
     }
 
-    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
+    const isSystemAdmin = req.user?.rol === "ADMIN_SISTEMA";
+    const isPointAdmin =
+      req.user?.rol === "ADMIN_PUNTO" &&
+      await administradorDePuntoAsignado(req.user.id, object.puntoId);
     const isOwner =
       req.user?.id === object.usuarioHalladorId &&
       object.estado === "PENDIENTE";
-    const userCanEditPhotos = isAdmin || isOwner;
+    const userCanEditPhotos = isSystemAdmin || isPointAdmin || isOwner;
 
     if (!userCanEditPhotos) {
       //porque multer ya los guardo, entonces debemos eliminarlos
       await deleteUploadedFiles(uploadedFiles);
 
       return res.status(403).json({
-        error: "No tienes permiso para editar fotografías",
+        error: MENSAJE_SIN_PERMISO,
       });
     }
 
@@ -232,13 +246,16 @@ export const uploadObjectPhotos = async (req, res) => {
 export const deleteObjectPhoto = async (req, res) => {
   try {
     const object = await objectService.getObjectById(req.params.objectId);
-    const isAdmin = ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol);
+    const isSystemAdmin = req.user?.rol === "ADMIN_SISTEMA";
+    const isPointAdmin =
+      req.user?.rol === "ADMIN_PUNTO" &&
+      await administradorDePuntoAsignado(req.user.id, object?.puntoId);
     const isOwner =
       req.user?.id === object?.usuarioHalladorId &&
       object?.estado === "PENDIENTE";
 
-    if (!isAdmin && !isOwner) {
-      return res.status(403).json({ error: "No tienes permiso para editar fotografías" });
+    if (!isSystemAdmin && !isPointAdmin && !isOwner) {
+      return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
     }
     await objectService.removeObjectPhoto(
       req.params.objectId,
@@ -278,15 +295,18 @@ export const updateObject = async (req, res) => {
     const isSystemAdmin = req.user.rol === "ADMIN_SISTEMA";
     const isAuthor = req.user.id === pre.usuarioHalladorId;
     const isApproved = pre.estado === "APROBADO";
+    const pointAdminAssigned =
+      isPointAdmin
+        ? await administradorDePuntoAsignado(req.user.id, pre.puntoId)
+        : false;
 
-    const canEdit = isSystemAdmin || isPointAdmin || (isAuthor && !isApproved);
+    const canEdit =
+      isSystemAdmin ||
+      pointAdminAssigned ||
+      (isAuthor && !isApproved);
 
     if (!canEdit) {
-      const error =
-        isAuthor && isApproved
-          ? "La pre-inscripción ya fue aprobada y no puede ser editada por su autor"
-          : "No tienes permiso para realizar esta acción";
-      return res.status(403).json({ error });
+      return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
     }
 
     const allowedFields = [
@@ -351,15 +371,16 @@ export const approveObject = async (req, res) => {
     const isPointAdmin = req.user.rol === "ADMIN_PUNTO";
     const isSystemAdmin = req.user.rol === "ADMIN_SISTEMA";
     const isApproved = pre.estado === "APROBADO";
+    const pointAdminAssigned =
+      isPointAdmin
+        ? await administradorDePuntoAsignado(req.user.id, pre.puntoId)
+        : false;
 
-    const canApprove = (isSystemAdmin || isPointAdmin ) && !isApproved;
+    const canApprove =
+      (isSystemAdmin || pointAdminAssigned) && !isApproved;
 
     if (!canApprove) {
-      const error =
-        isApproved
-          ? "La pre-inscripción ya fue aprobada y no puede ser aprobada nuevamente"
-          : "No tienes permiso para realizar esta acción";
-      return res.status(403).json({ error });
+      return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
     }
 
     const updated = await objectService.approveObject(
@@ -388,14 +409,18 @@ export const deletePendingObject = async (req, res) => {
     }
     const isPointAdmin = req.user.rol === "ADMIN_PUNTO";
     const isSystemAdmin = req.user.rol === "ADMIN_SISTEMA";
-
-    if (!isSystemAdmin && !isPointAdmin) {
-      return res.status(403).json({ error: "No tienes permiso para realizar esta acción" });
-    }
-
     const pre = await objectService.getObjectById(req.params.id);
     if (!pre)
       return res.status(404).json({ error: "Pre-inscripción no encontrada" });
+
+    const pointAdminAssigned =
+      isPointAdmin
+        ? await administradorDePuntoAsignado(req.user.id, pre.puntoId)
+        : false;
+
+    if (!isSystemAdmin && !pointAdminAssigned) {
+      return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
+    }
     if (pre.estado !== "PENDIENTE") {
       return res.status(403).json({
         error: "Solo se pueden eliminar objetos pendientes",

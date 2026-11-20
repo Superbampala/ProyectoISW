@@ -176,7 +176,7 @@ export const getObjectPhoto = (photoId) =>
     where: { id: Number(photoId) },
     include: {
       objeto: {
-        select: { usuarioHalladorId: true },
+        select: { usuarioHalladorId: true, puntoId: true },
       },
     },
   });
@@ -325,18 +325,43 @@ const getPendingObjectsPage = async (
   };
 };
 
-export const getAllPendingObjects = (
-  page,
-  limit,
-  includePhotos = false,
-  filters = {},
-) =>
-  getPendingObjectsPage(
-    buildObjectFilters({ estado: "PENDIENTE" }, filters),
+//PORISACASO
+
+//export const getAllPendingObjects = (
+//  page,
+// limit,
+// includePhotos = false,
+//  filters = {},
+//) =>
+  
+export const getAllPendingObjects = async (page, limit, user, filters = {}) => {
+  if (user.rol === "ADMIN_SISTEMA") {
+    return getPendingObjectsPage(
+      buildObjectFilters({ estado: "PENDIENTE" }, filters),
+      page,
+      limit,
+    );
+  }
+
+  const asignaciones = await prisma.adminPuntoAsignacion.findMany({
+    where: { usuarioId: Number(user.id) },
+    select: { puntoId: true },
+  });
+
+  const puntoIds = asignaciones.map(({ puntoId }) => puntoId);
+
+  return getPendingObjectsPage(
+    buildObjectFilters(
+      {
+        estado: "PENDIENTE",
+        puntoId: { in: puntoIds },
+      },
+      filters,
+    ),
     page,
     limit,
-    includePhotos,
   );
+};
 
 export const getPendingObjectsByUser = (userId, page, limit, filters = {}) =>
   getPendingObjectsPage(

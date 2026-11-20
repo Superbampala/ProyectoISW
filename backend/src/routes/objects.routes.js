@@ -14,7 +14,7 @@ import {
   getObjectOptions,
   deletePendingObject,
 } from '../controllers/object.controller.js';
-import { autenticarSesion } from '../middlewares/auth.middleware.js';
+import { autenticarSesion, exigirRol } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import {
   actualizarObjetoSchema,
@@ -30,7 +30,7 @@ import { uploadObjectPhotos as uploadObjectPhotosMiddleware } from '../middlewar
 
 const router = Router();
 
-router.post('/', autenticarSesion, uploadObjectPhotosMiddleware, validate(crearObjetoSchema), createObject);
+router.post('/', autenticarSesion, exigirRol('USUARIO_UBB'), uploadObjectPhotosMiddleware, validate(crearObjetoSchema), createObject);
 router.get('/', validate(consultarObjetosQuerySchema), getApprovedObjects);
 router.get(
   '/admin/approved',
@@ -38,13 +38,15 @@ router.get(
   validate(consultarObjetosQuerySchema),
   getApprovedObjectsForPointAdmin,
 );
-router.get('/pending', autenticarSesion, validate(consultarObjetosQuerySchema), getAllPendingObjects);
-router.get('/pending/user', autenticarSesion, validate(consultarObjetosQuerySchema), getPendingObjectsByUser);
+//router.get('/pending', autenticarSesion, validate(consultarObjetosQuerySchema), getAllPendingObjects);
+//router.get('/pending/user', autenticarSesion, validate(consultarObjetosQuerySchema), getPendingObjectsByUser);
+router.get('/pending', autenticarSesion, exigirRol('ADMIN_PUNTO', 'ADMIN_SISTEMA'), validate(consultarObjetosQuerySchema), getAllPendingObjects);
+router.get('/pending/user', autenticarSesion, exigirRol('USUARIO_UBB'), validate(consultarObjetosQuerySchema), getPendingObjectsByUser);
 router.get('/options', getObjectOptions);
 router.get('/puntos-entrega', getDeliveryPoints);
 router.patch('/:id', autenticarSesion, validate(actualizarObjetoSchema), updateObject);
-router.patch('/:id/approve', autenticarSesion, validate(objetoIdParamSchema), approveObject);
-router.delete('/:id', autenticarSesion, validate(objetoIdParamSchema), deletePendingObject);
+router.patch('/:id/approve', autenticarSesion, exigirRol('ADMIN_PUNTO', 'ADMIN_SISTEMA'), validate(objetoIdParamSchema), approveObject);
+router.delete('/:id', autenticarSesion, exigirRol('ADMIN_PUNTO', 'ADMIN_SISTEMA'), validate(objetoIdParamSchema), deletePendingObject);
 router.post(
   '/:objectId/photos',
   autenticarSesion,
