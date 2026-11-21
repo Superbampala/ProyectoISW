@@ -22,7 +22,7 @@ function getTimeLeft(iso, now) {
   return `${hours} h ${minutes} min`;
 }
 
-export default function ObjectItem({ obj, onUpdated }) {
+export default function ObjectItem({ obj, onUpdated, onApprovalNotice }) {
   const [now, setNow] = useState(() => Date.now());
   const [isOpen, setIsOpen] = useState(false);
 
@@ -87,6 +87,7 @@ export default function ObjectItem({ obj, onUpdated }) {
           object={obj}
           onClose={closeDetails}
           onSaved={onUpdated}
+          onApprovalNotice={onApprovalNotice}
         />
       )}
     </li>

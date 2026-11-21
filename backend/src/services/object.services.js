@@ -455,6 +455,46 @@ export const updateObject = (id, data) => {
   });
 };
 
+const normalizeRut = (rut = "") => String(rut).replace(/[^0-9k]/gi, "").toUpperCase();
+
+const getRutLookupValues = (rut) => {
+  const rawRut = String(rut).trim();
+  const normalizedRut = normalizeRut(rawRut);
+  if (normalizedRut.length < 2) return [rawRut];
+
+  const body = normalizedRut.slice(0, -1);
+  const verifier = normalizedRut.slice(-1);
+  const formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return [...new Set([
+    rawRut,
+    rawRut.toUpperCase(),
+    normalizedRut,
+    `${body}-${verifier}`,
+    `${formattedBody}-${verifier}`,
+    `${body}-${verifier.toLowerCase()}`,
+    `${formattedBody}-${verifier.toLowerCase()}`,
+  ])];
+};
+
+export const findVerifiedOwnerByRut = async (rut) => {
+  const normalizedRut = normalizeRut(rut);
+  const users = await prisma.usuario.findMany({
+    where: {
+      rut: { in: getRutLookupValues(rut) },
+      habilitado: true,
+      rol: "USUARIO_UBB",
+    },
+    select: { id: true, nombre: true, rut: true, correo: true },
+  });
+  const matches = users.filter(
+    (user) => normalizeRut(user.rut) === normalizedRut,
+  );
+
+  if (matches.length === 1) return { status: "MATCH", user: matches[0] };
+  if (matches.length > 1) return { status: "AMBIGUOUS" };
+  return { status: "NO_MATCH" };
+};
+
 export const approveObject = async (id, usuarioId) => {
   const objetoId = Number(id);
 

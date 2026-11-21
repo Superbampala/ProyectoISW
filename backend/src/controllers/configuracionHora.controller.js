@@ -1,10 +1,10 @@
 import * as configuracionHoraService from "../services/configuracionHora.services.js";
 
 const requireConfigurationAdmin = (req, res) => {
-  if (["ADMIN_SISTEMA", "ADMIN_PUNTO"].includes(req.user?.rol)) return true;
+  if (req.user?.rol === "ADMIN_SISTEMA") return true;
 
   res.status(403).json({
-    error: "Solo un administrador o encargado puede gestionar la hora límite",
+    error: "Solo un administrador del sistema puede gestionar la hora límite",
   });
   return false;
 };

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { API_URL, getAuthHeaders } from "./api/config";
+import { API_URL, getAuthHeaders, getSession } from "./api/config";
 
 import AuthPage from "./components/auth/AuthPage";
 import MainMenu from "./components/mainMenu/mainMenu";
@@ -63,6 +63,13 @@ function App() {
           setAuthMessage("La sesión no es válida o ha expirado");
           navigate("/login", { replace: true });
           return;
+        }
+        const session = getSession();
+        if (session?.token) {
+          localStorage.setItem(
+            "ubb-session",
+            JSON.stringify({ ...session, usuario: data.usuario }),
+          );
         }
         setUser(data.usuario);
       })
@@ -192,13 +199,8 @@ function App() {
       <Route
         path="/configuracion-hora"
         element={
-          <ProtectedRoute
-            user={user}
-            allowedRoles={["ADMIN_PUNTO", "ADMIN_SISTEMA"]}
-          >
+          <ProtectedRoute user={user} allowedRoles={["ADMIN_SISTEMA"]}>
             <TimeConfiguration
-              userId={user?.id}
-              userRole={user?.rol}
               onBack={() => navigate("/menu")}
             />
           </ProtectedRoute>

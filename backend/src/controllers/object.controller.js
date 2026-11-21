@@ -3,6 +3,7 @@ import prisma from "../config/prisma.js";
 import path from "node:path";
 import fs from "node:fs/promises";
 import { uploadDirectory } from "../middlewares/photo-upload.middleware.js";
+import { enviarCorreoDocumentoDisponible } from "../utils/mailer.js";
 
 const deleteUploadedFiles = (files) =>
   Promise.all(files.map((file) => fs.unlink(file.path).catch(() => undefined)));
@@ -388,12 +389,66 @@ export const approveObject = async (req, res) => {
       return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
     }
 
+    if (
+      pre.categoria === "DOCUMENTOS_Y_TARJETAS" &&
+      (!pre.titularRut?.trim() || pre.titularNombre?.trim().length < 2)
+    ) {
+      return res.status(400).json({
+        error: "El RUT y nombre del titular son obligatorios para aprobar documentos y tarjetas",
+      });
+    }
+
     const updated = await objectService.approveObject(
       req.params.id,
       req.user.id,
     );
 
-    return res.status(200).json(updated);
+    let notification = { status: "NOT_APPLICABLE", message: "" };
+    if (updated.objeto.categoria === "DOCUMENTOS_Y_TARJETAS") {
+      try {
+        const match = await objectService.findVerifiedOwnerByRut(
+          updated.objeto.titularRut,
+        );
+
+        if (match.status === "MATCH") {
+          const point = await prisma.puntoEntrega.findUnique({
+            where: { id: updated.objeto.puntoId },
+            select: { nombre: true },
+          });
+          await enviarCorreoDocumentoDisponible(
+            match.user.correo,
+            match.user.nombre,
+            updated.objeto.descripcion,
+            point?.nombre,
+          );
+          notification = {
+            status: "SENT",
+            message: "Se notificó por correo al titular registrado.",
+          };
+        } else if (match.status === "AMBIGUOUS") {
+          notification = {
+            status: "AMBIGUOUS",
+            message: "Hay varias cuentas habilitadas con ese RUT; no se envió el correo.",
+          };
+        } else {
+          notification = {
+            status: "NO_MATCH",
+            message: "No se encontró una cuenta habilitada con ese RUT; no se envió el correo.",
+          };
+        }
+      } catch (notificationError) {
+        console.error(
+          "El objeto fue aprobado, pero no se pudo enviar el correo:",
+          notificationError,
+        );
+        notification = {
+          status: "ERROR",
+          message: "El objeto fue aprobado, pero no se pudo enviar el correo.",
+        };
+      }
+    }
+
+    return res.status(200).json({ ...updated, notification });
 
 
   }catch (err) {

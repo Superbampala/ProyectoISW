@@ -19,8 +19,6 @@ export default function MainMenu({
 }) {
   const isUser = user.rol === "USUARIO_UBB";
   const isSystemAdmin = user.rol === "ADMIN_SISTEMA";
-  const canManageSettings =
-    isSystemAdmin || user.rol === "ADMIN_PUNTO";
   const pendingObjectsTitle = isUser ? "Mis objetos pendientes" : "Objetos pendientes";
 
   return (
@@ -31,7 +29,7 @@ export default function MainMenu({
           <span className="menu__user">Hola, {user.nombre}</span>
         </div>
         <div className="menu__header-actions">
-          {canManageSettings && (
+          {isSystemAdmin && (
             <button
               className="menu__settings"
               type="button"
