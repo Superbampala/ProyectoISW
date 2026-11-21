@@ -335,33 +335,8 @@ const getPendingObjectsPage = async (
 //) =>
   
 export const getAllPendingObjects = async (page, limit, user, filters = {}) => {
-  if (user.rol === "ADMIN_SISTEMA") {
-    return getPendingObjectsPage(
-      buildObjectFilters({ estado: "PENDIENTE" }, filters),
-      page,
-      limit,
-      true,
-    );
-  }
-
-  const asignaciones = await prisma.adminPuntoAsignacion.findMany({
-    where: { usuarioId: Number(user.id) },
-    select: { puntoId: true },
-  });
-
-  const puntoIds = asignaciones.map(({ puntoId }) => puntoId);
-
   return getPendingObjectsPage(
-    buildObjectFilters(
-      {
-        estado: "PENDIENTE",
-        OR: [
-          { puntoId: { in: puntoIds } },
-          { usuarioHalladorId: Number(user.id) },
-        ],
-      },
-      filters,
-    ),
+    buildObjectFilters({ estado: "PENDIENTE" }, filters),
     page,
     limit,
     true,
@@ -432,8 +407,19 @@ const getApprovedObjectsPage = async (
   };
 };
 
-export const getApprovedObjects = (page, limit, filters = {}, includeHolderData = false) =>
-  getApprovedObjectsPage(page, limit, false, filters, includeHolderData);
+export const getApprovedObjects = (
+  page,
+  limit,
+  filters = {},
+  includeHolderData = false,
+) =>
+  getApprovedObjectsPage(
+    page,
+    limit,
+    includeHolderData,
+    filters,
+    includeHolderData,
+  );
 
 export const getApprovedObjectsForPointAdmin = (
   page,
