@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { usePendingObjects } from "../../../Hooks/useObject";
 import "./pendingObjectsBoard.css";
 import ObjectItem from "../pendingObjectItem/pendingObjectItem";
@@ -7,8 +8,20 @@ import ObjectFilters from "../../objectFilters/objectFilters";
 export default function ObjectsBoard({
   onBack = () => {},
 }) {
+  const [approvalNotice, setApprovalNotice] = useState(null);
   const { objects, loading, error, refetch, goToPage, pagination, isUserScope, filters, applyFilters } =
     usePendingObjects();
+
+  useEffect(() => {
+    if (!approvalNotice) return undefined;
+
+    const timeout = window.setTimeout(
+      () => setApprovalNotice(null),
+      approvalNotice.status === "SENT" ? 5000 : 8000,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [approvalNotice]);
+
   return (
     <div className="board">
       <header className="board__header">
@@ -49,7 +62,12 @@ export default function ObjectsBoard({
           <>
             <ul className="board__grid">
               {objects.map((obj) => (
-                <ObjectItem key={obj.id} obj={obj} onUpdated={refetch} />
+                <ObjectItem
+                  key={obj.id}
+                  obj={obj}
+                  onUpdated={refetch}
+                  onApprovalNotice={setApprovalNotice}
+                />
               ))}
             </ul>
             <nav
@@ -77,6 +95,22 @@ export default function ObjectsBoard({
           </>
         )}
       </main>
+      {approvalNotice && (
+        <div
+          className={`board__toast board__toast--${approvalNotice.status.toLowerCase()}`}
+          role={approvalNotice.status === "ERROR" ? "alert" : "status"}
+          aria-live={approvalNotice.status === "ERROR" ? "assertive" : "polite"}
+        >
+          <p>{approvalNotice.message}</p>
+          <button
+            type="button"
+            onClick={() => setApprovalNotice(null)}
+            aria-label="Cerrar aviso"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
     </div>
   );
 }

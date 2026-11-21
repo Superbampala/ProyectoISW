@@ -103,6 +103,10 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
     setError("");
   };
 
+    const closeVerificationTab = () => {
+    window.close();
+  }
+
   // ENVIA CORREO Y CONTRASEÑA PARA INICIAR SESION
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -272,6 +276,9 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
           <h1 className="auth__title">Verificación de correo</h1>
           {loading && <p className="auth__message">Verificando correo...</p>}
           {message && <p className="auth__message">{message}</p>}
+          {message && !verificationExpired && (
+            <p className="auth__subtitle">El correo fue verificado exitosamente. Puedes cerrar la pestaña para continuar.</p>
+          )}
           {error && <p className="auth__message auth__message--error">{error}</p>}
           <div className="auth__success-actions">
             {verificationExpired && (
@@ -290,9 +297,15 @@ export default function AuthPage({ initialMessage = "", onAuthenticated }) {
                 </button>
               </>
             )}
-            <button className="auth__button" type="button" onClick={() => changeMode("login")}>
-              Ir al inicio de sesión
-            </button>
+            {message && !verificationExpired && (
+              <button
+                className="auth__button"
+                type="button"
+                onClick={closeVerificationTab}
+              >
+                Cerrar pestaña
+              </button>
+            )}
           </div>
         </section>
       </main>

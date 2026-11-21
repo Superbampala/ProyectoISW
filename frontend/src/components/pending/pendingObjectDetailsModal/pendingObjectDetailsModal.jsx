@@ -35,7 +35,12 @@ function formatCategory(category) {
     .replace(/^\w/, (letter) => letter.toUpperCase());
 }
 
-export default function ObjectDetailsModal({ object, onClose, onSaved }) {
+export default function ObjectDetailsModal({
+  object,
+  onClose,
+  onSaved,
+  onApprovalNotice,
+}) {
   const [form, setForm] = useState(() => getInitialForm(object));
   const {
     options,
@@ -137,7 +142,13 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
 
     try {
       await saveObject();
-      await approveObject(object.id);
+      const approval = await approveObject(object.id);
+      onApprovalNotice?.(
+        approval.notification || {
+          status: "INFO",
+          message: "Objeto aprobado.",
+        },
+      );
       onSaved?.();
       onClose();
     } catch (error) {

@@ -96,6 +96,72 @@ body {
   margin-top: 0;
 }
 
+.board__toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: min(440px, calc(100vw - 32px));
+  padding: 16px 18px;
+  border: 1px solid #b8c5d1;
+  border-left: 5px solid #126b50;
+  border-radius: 6px;
+  background: #fff;
+  color: #172b3a;
+  box-shadow: 0 8px 28px rgba(0, 25, 45, 0.2);
+  animation: board-toast-enter 180ms ease-out;
+}
+
+.board__toast--no_match,
+.board__toast--ambiguous {
+  border-left-color: #9a5c00;
+}
+
+.board__toast--error {
+  border-left-color: #b42318;
+}
+
+.board__toast p {
+  flex: 1;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.board__toast button {
+  flex: none;
+  padding: 6px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.board__toast button:hover {
+  text-decoration: underline;
+}
+
+@keyframes board-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board__toast {
+    animation: none;
+  }
+}
+
 /* ---------- Grid: se adapta solo al ancho de pantalla ---------- */
 .board__grid {
   display: grid;
@@ -115,6 +181,11 @@ body {
   .board__grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .board__toast {
+    right: 16px;
+    bottom: 16px;
   }
 
 }

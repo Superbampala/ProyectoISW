@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API_URL } from "../../api/config";
+import { API_URL, getAuthHeaders } from "../../api/config";
 import { BackIcon } from "../icons/icons";
 import "./timeConfiguration.css";
 
@@ -14,7 +14,7 @@ function getRequestErrorMessage(error, fallback) {
   return error.message || fallback;
 }
 
-export default function TimeConfiguration({ userId, userRole, onBack = () => {} }) {
+export default function TimeConfiguration({ onBack = () => {} }) {
   const [hours, setHours] = useState(2);
   const [currentHours, setCurrentHours] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,10 +27,7 @@ export default function TimeConfiguration({ userId, userRole, onBack = () => {} 
 
     fetch(`${API_URL}/configuracion-hora`, {
       signal: controller.signal,
-      headers: {
-        "x-user-id": String(userId),
-        "x-user-role": userRole,
-      },
+      headers: getAuthHeaders(),
     })
       .then(async (response) => {
         const data = await response.json();
@@ -55,7 +52,7 @@ export default function TimeConfiguration({ userId, userRole, onBack = () => {} 
       });
 
     return () => controller.abort();
-  }, [userId, userRole]);
+  }, []);
 
   async function saveConfiguration(event) {
     event.preventDefault();
@@ -68,8 +65,7 @@ export default function TimeConfiguration({ userId, userRole, onBack = () => {} 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": String(userId),
-          "x-user-role": userRole,
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({ horasLimite: Number(hours) }),
       });
