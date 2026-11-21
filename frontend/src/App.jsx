@@ -151,7 +151,10 @@ function App() {
       <Route
         path="/registrar-objeto"
         element={
-          <ProtectedRoute user={user} allowedRoles={["USUARIO_UBB"]}>
+          <ProtectedRoute
+            user={user}
+            allowedRoles={["USUARIO_UBB", "ADMIN_PUNTO", "ADMIN_SISTEMA"]}
+          >
             <ObjectForm onBack={() => navigate("/menu")} />
           </ProtectedRoute>
         }
@@ -160,7 +163,10 @@ function App() {
         path="/objetos-aprobados"
         element={
           <ProtectedRoute user={user}>
-            <ApprovedObjectsBoard onBack={() => navigate("/menu")} />
+            <ApprovedObjectsBoard
+              userRole={user?.rol}
+              onBack={() => navigate("/menu")}
+            />
           </ProtectedRoute>
         }
       />

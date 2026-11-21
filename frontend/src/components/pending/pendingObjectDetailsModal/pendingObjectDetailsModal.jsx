@@ -109,10 +109,32 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   }
 
   async function showApproveDialog() {
+    if (form.categoria === "DOCUMENTOS_Y_TARJETAS") {
+      if (!String(form.titularRut || "").trim()) {
+        setFormError("El RUT del titular es obligatorio para documentos y tarjetas");
+        return;
+      }
+      if (String(form.titularNombre || "").trim().length < 2) {
+        setFormError("El nombre del titular es obligatorio para documentos y tarjetas");
+        return;
+      }
+    }
+    setFormError(null);
     setConfirmationAction("APROBAR");
   }
 
   async function confirmApprove() {
+    if (form.categoria === "DOCUMENTOS_Y_TARJETAS") {
+      if (!String(form.titularRut || "").trim()) {
+        setFormError("El RUT del titular es obligatorio para documentos y tarjetas");
+        return;
+      }
+      if (String(form.titularNombre || "").trim().length < 2) {
+        setFormError("El nombre del titular es obligatorio para documentos y tarjetas");
+        return;
+      }
+    }
+
     try {
       await saveObject();
       await approveObject(object.id);
@@ -148,6 +170,21 @@ export default function ObjectDetailsModal({ object, onClose, onSaved }) {
   async function saveObject() {
     // limpia el error del formulario antes de intentar guardar
     setFormError(null);
+
+    if (form.categoria === "DOCUMENTOS_Y_TARJETAS") {
+      if (!String(form.titularRut || "").trim()) {
+        const message =
+          "El RUT del titular es obligatorio para documentos y tarjetas";
+        setFormError(message);
+        throw new Error(message);
+      }
+      if (String(form.titularNombre || "").trim().length < 2) {
+        const message =
+          "El nombre del titular es obligatorio para documentos y tarjetas";
+        setFormError(message);
+        throw new Error(message);
+      }
+    }
 
     const data = { ...form, puntoId: Number(form.puntoId) };
     if (data.categoria !== "DOCUMENTOS_Y_TARJETAS") {

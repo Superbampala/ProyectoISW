@@ -34,14 +34,13 @@ export const getAllPendingObjects = async (req, res) => {
     const pendingObjects = await objectService.getAllPendingObjects(
       req.query.page,
       req.query.limit,
-      req.user.rol === "ADMIN_PUNTO",
+      req.user,
       {
         categoria: req.query.categoria,
         puntoId: req.query.puntoId,
         desde: req.query.desde,
         hasta: req.query.hasta,
       },
-      //req.user,
     );
     res.status(200).json(pendingObjects);
   } catch (error) {
@@ -81,6 +80,7 @@ export const getApprovedObjects = async (req, res) => {
         desde: req.query.desde,
         hasta: req.query.hasta,
       },
+      ["ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(req.user?.rol),
     );
     res.status(200).json(approvedObjects);
   } catch (error) {
@@ -370,6 +370,7 @@ export const approveObject = async (req, res) => {
 
     const isPointAdmin = req.user.rol === "ADMIN_PUNTO";
     const isSystemAdmin = req.user.rol === "ADMIN_SISTEMA";
+    const isAuthor = req.user.id === pre.usuarioHalladorId;
     const isApproved = pre.estado === "APROBADO";
     const pointAdminAssigned =
       isPointAdmin
@@ -377,7 +378,7 @@ export const approveObject = async (req, res) => {
         : false;
 
     const canApprove =
-      (isSystemAdmin || pointAdminAssigned) && !isApproved;
+      (isSystemAdmin || pointAdminAssigned || isAuthor) && !isApproved;
 
     if (!canApprove) {
       return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
@@ -413,12 +414,13 @@ export const deletePendingObject = async (req, res) => {
     if (!pre)
       return res.status(404).json({ error: "Pre-inscripción no encontrada" });
 
+    const isAuthor = req.user.id === pre.usuarioHalladorId;
     const pointAdminAssigned =
       isPointAdmin
         ? await administradorDePuntoAsignado(req.user.id, pre.puntoId)
         : false;
 
-    if (!isSystemAdmin && !pointAdminAssigned) {
+    if (!isSystemAdmin && !pointAdminAssigned && !isAuthor) {
       return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
     }
     if (pre.estado !== "PENDIENTE") {
