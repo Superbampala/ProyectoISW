@@ -103,16 +103,14 @@ export default function MainMenu({
           )}
         </div>
 
-        {isUser && (
-          <button
-            className="menu__create"
-            type="button"
-            onClick={onRegisterObject}
-            aria-label="Encontré un objeto"
-          >
-            <PlusIcon />
-          </button>
-        )}
+        <button
+          className="menu__create"
+          type="button"
+          onClick={onRegisterObject}
+          aria-label="Encontré un objeto"
+        >
+          <PlusIcon />
+        </button>
       </main>
     </div>
   );

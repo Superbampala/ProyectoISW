@@ -105,6 +105,24 @@ export const actualizarObjetoSchema = z.object({
     .refine((data) => Object.keys(data).length > 0, {
       message: 'Debe proporcionar al menos un campo para actualizar'
     })
+    .superRefine((data, ctx) => {
+      if (data.categoria === 'DOCUMENTOS_Y_TARJETAS') {
+        if (!data.titularRut) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['titularRut'],
+            message: 'El RUT del titular es obligatorio cuando la categoría es DOCUMENTOS_Y_TARJETAS'
+          });
+        }
+        if (!data.titularNombre) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['titularNombre'],
+            message: 'El nombre del titular es obligatorio cuando la categoría es DOCUMENTOS_Y_TARJETAS'
+          });
+        }
+      }
+    })
 });
 
 /**

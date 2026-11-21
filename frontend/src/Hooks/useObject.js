@@ -21,6 +21,9 @@ export function usePendingObjects(userRole = getSession()?.usuario?.rol) {
 
   const fetchPendingObjects = useCallback(
     async (signal, page = 1, activeFilters = filters) => {
+      const safePage = Number.isInteger(Number(page)) && Number(page) > 0
+        ? Number(page)
+        : 1;
       setLoading(true);
       setError(null);
 
@@ -28,7 +31,7 @@ export function usePendingObjects(userRole = getSession()?.usuario?.rol) {
         ? "/objects/pending/user"
         : "/objects/pending";
       const params = new URLSearchParams({
-        page: String(page),
+        page: String(safePage),
         limit: "6",
       });
       if (activeFilters.categoria) params.set("categoria", activeFilters.categoria);

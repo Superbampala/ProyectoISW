@@ -30,8 +30,21 @@ import { uploadObjectPhotos as uploadObjectPhotosMiddleware } from '../middlewar
 
 const router = Router();
 
-router.post('/', autenticarSesion, exigirRol('USUARIO_UBB'), uploadObjectPhotosMiddleware, validate(crearObjetoSchema), createObject);
-router.get('/', validate(consultarObjetosQuerySchema), getApprovedObjects);
+router.post(
+  '/',
+  autenticarSesion,
+  exigirRol('USUARIO_UBB', 'ADMIN_PUNTO', 'ADMIN_SISTEMA'),
+  uploadObjectPhotosMiddleware,
+  validate(crearObjetoSchema),
+  createObject
+);
+router.get(
+  '/',
+  autenticarSesion,
+  exigirRol('USUARIO_UBB', 'ADMIN_PUNTO', 'ADMIN_SISTEMA'),
+  validate(consultarObjetosQuerySchema),
+  getApprovedObjects
+);
 router.get(
   '/admin/approved',
   autenticarSesion,

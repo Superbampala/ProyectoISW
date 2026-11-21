@@ -340,6 +340,7 @@ export const getAllPendingObjects = async (page, limit, user, filters = {}) => {
       buildObjectFilters({ estado: "PENDIENTE" }, filters),
       page,
       limit,
+      true,
     );
   }
 
@@ -354,12 +355,16 @@ export const getAllPendingObjects = async (page, limit, user, filters = {}) => {
     buildObjectFilters(
       {
         estado: "PENDIENTE",
-        puntoId: { in: puntoIds },
+        OR: [
+          { puntoId: { in: puntoIds } },
+          { usuarioHalladorId: Number(user.id) },
+        ],
       },
       filters,
     ),
     page,
     limit,
+    true,
   );
 };
 
@@ -374,6 +379,7 @@ export const getPendingObjectsByUser = (userId, page, limit, filters = {}) =>
     ),
     page,
     limit,
+    true,
   );
 
 const getApprovedObjectsPage = async (
@@ -381,6 +387,7 @@ const getApprovedObjectsPage = async (
   limit = 6,
   includePhotos = false,
   filters = {},
+  includeHolderData = false,
 ) => {
   const safePage = Math.max(1, Number(page) || 1);
   const safeLimit = Math.min(50, Math.max(1, Number(limit) || 6));
@@ -392,13 +399,15 @@ const getApprovedObjectsPage = async (
     descripcion: true,
     lugarHallazgo: true,
     puntoId: true,
-    titularRut: true,
-    titularNombre: true,
     fechaRegistro: true,
     punto: {
       select: { id: true, nombre: true },
     },
   };
+  if (includeHolderData) {
+    select.titularRut = true;
+    select.titularNombre = true;
+  }
   if (includePhotos) {
     select.fotos = { select: { id: true, urlArchivo: true } };
   }
@@ -423,14 +432,14 @@ const getApprovedObjectsPage = async (
   };
 };
 
-export const getApprovedObjects = (page, limit, filters = {}) =>
-  getApprovedObjectsPage(page, limit, false, filters);
+export const getApprovedObjects = (page, limit, filters = {}, includeHolderData = false) =>
+  getApprovedObjectsPage(page, limit, false, filters, includeHolderData);
 
 export const getApprovedObjectsForPointAdmin = (
   page,
   limit,
   filters = {},
-) => getApprovedObjectsPage(page, limit, true, filters);
+) => getApprovedObjectsPage(page, limit, true, filters, true);
 
 export const getDeliveryPoints = () => {
   return prisma.puntoEntrega.findMany({
