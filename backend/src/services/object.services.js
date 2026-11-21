@@ -116,7 +116,7 @@ export const createObject = async (objectData, files = []) => {
     return await prisma.$transaction(async (transaction) => {
       if (objectData.usuarioRol === DAILY_REGISTRATION_ROLE) {
         await transaction.$queryRaw`
-          SELECT pg_advisory_xact_lock(${Number(usuarioHalladorId)})
+          SELECT pg_advisory_xact_lock(${Number(usuarioHalladorId)})::text
         `;
 
         const [dailyCount] = await transaction.$queryRaw`
