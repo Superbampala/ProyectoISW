@@ -157,9 +157,13 @@ export const createObject = async (req, res) => {
 
 export const getObjectPhoto = async (req, res) => {
   try {
-    if (req.user?.rol !== "ADMIN_PUNTO") {
+    if (
+      !["USUARIO_UBB", "ADMIN_PUNTO", "ADMIN_SISTEMA"].includes(
+        req.user?.rol,
+      )
+    ) {
       return res.status(403).json({
-        error: "Solo un administrador de punto puede ver fotografías",
+        error: "No tienes permiso para ver fotografías",
       });
     }
 

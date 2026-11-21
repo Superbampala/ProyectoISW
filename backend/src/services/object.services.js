@@ -432,8 +432,19 @@ const getApprovedObjectsPage = async (
   };
 };
 
-export const getApprovedObjects = (page, limit, filters = {}, includeHolderData = false) =>
-  getApprovedObjectsPage(page, limit, false, filters, includeHolderData);
+export const getApprovedObjects = (
+  page,
+  limit,
+  filters = {},
+  includeHolderData = false,
+) =>
+  getApprovedObjectsPage(
+    page,
+    limit,
+    includeHolderData,
+    filters,
+    includeHolderData,
+  );
 
 export const getApprovedObjectsForPointAdmin = (
   page,
