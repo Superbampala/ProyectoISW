@@ -175,9 +175,7 @@ export const getObjectPhoto = async (req, res) => {
     }
 
     const isSystemAdmin = req.user?.rol === "ADMIN_SISTEMA";
-    const isPointAdmin =
-      req.user?.rol === "ADMIN_PUNTO" &&
-      await administradorDePuntoAsignado(req.user.id, photo.objeto.puntoId);
+    const isPointAdmin = req.user?.rol === "ADMIN_PUNTO";
     const isOwner = req.user?.id === photo.objeto.usuarioHalladorId;
     if (!isSystemAdmin && !isPointAdmin && !isOwner) {
       return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
@@ -207,9 +205,7 @@ export const uploadObjectPhotos = async (req, res) => {
     }
 
     const isSystemAdmin = req.user?.rol === "ADMIN_SISTEMA";
-    const isPointAdmin =
-      req.user?.rol === "ADMIN_PUNTO" &&
-      await administradorDePuntoAsignado(req.user.id, object.puntoId);
+    const isPointAdmin = req.user?.rol === "ADMIN_PUNTO";
     const isOwner =
       req.user?.id === object.usuarioHalladorId &&
       object.estado === "PENDIENTE";
@@ -252,9 +248,7 @@ export const deleteObjectPhoto = async (req, res) => {
   try {
     const object = await objectService.getObjectById(req.params.objectId);
     const isSystemAdmin = req.user?.rol === "ADMIN_SISTEMA";
-    const isPointAdmin =
-      req.user?.rol === "ADMIN_PUNTO" &&
-      await administradorDePuntoAsignado(req.user.id, object?.puntoId);
+    const isPointAdmin =  req.user?.rol === "ADMIN_PUNTO";
     const isOwner =
       req.user?.id === object?.usuarioHalladorId &&
       object?.estado === "PENDIENTE";
@@ -300,14 +294,10 @@ export const updateObject = async (req, res) => {
     const isSystemAdmin = req.user.rol === "ADMIN_SISTEMA";
     const isAuthor = req.user.id === pre.usuarioHalladorId;
     const isApproved = pre.estado === "APROBADO";
-    const pointAdminAssigned =
-      isPointAdmin
-        ? await administradorDePuntoAsignado(req.user.id, pre.puntoId)
-        : false;
 
     const canEdit =
       isSystemAdmin ||
-      pointAdminAssigned ||
+      isPointAdmin ||
       (isAuthor && !isApproved);
 
     if (!canEdit) {
@@ -377,13 +367,10 @@ export const approveObject = async (req, res) => {
     const isSystemAdmin = req.user.rol === "ADMIN_SISTEMA";
     const isAuthor = req.user.id === pre.usuarioHalladorId;
     const isApproved = pre.estado === "APROBADO";
-    const pointAdminAssigned =
-      isPointAdmin
-        ? await administradorDePuntoAsignado(req.user.id, pre.puntoId)
-        : false;
+
 
     const canApprove =
-      (isSystemAdmin || pointAdminAssigned || isAuthor) && !isApproved;
+      (isSystemAdmin || isPointAdmin || isAuthor) && !isApproved;
 
     if (!canApprove) {
       return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
@@ -474,12 +461,8 @@ export const deletePendingObject = async (req, res) => {
       return res.status(404).json({ error: "Pre-inscripción no encontrada" });
 
     const isAuthor = req.user.id === pre.usuarioHalladorId;
-    const pointAdminAssigned =
-      isPointAdmin
-        ? await administradorDePuntoAsignado(req.user.id, pre.puntoId)
-        : false;
 
-    if (!isSystemAdmin && !pointAdminAssigned && !isAuthor) {
+    if (!isSystemAdmin && !isPointAdmin && !isAuthor) {
       return res.status(403).json({ error: MENSAJE_SIN_PERMISO });
     }
     if (pre.estado !== "PENDIENTE") {
